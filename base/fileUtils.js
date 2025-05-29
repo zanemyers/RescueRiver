@@ -12,8 +12,10 @@ import { fileURLToPath } from "url";
 import { parse } from "@fast-csv/parse";
 import { writeToPath } from "@fast-csv/format";
 import { writeFile } from "fs/promises";
+import ExcelJS from "exceljs";
 
 import { getUTCTimeStamp, getUTCYearMonth } from "./dateUtils.js";
+import { ar } from "date-fns/locale";
 
 // Get the directory name of the current module
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -21,27 +23,21 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectDir = path.resolve(__dirname, "..");
 
 /**
- * Base class for writing data to a file.
+ * Base class for handling files
  * It provides methods to archive existing files and ensuring a directory exists.
  */
-class FileWriter {
+class FileHandler {
   /**
    * @param {string} filePath - The path to the file.
    * @param {string} archiveFolderName - Folder name to store archived versions.
    * @param {string} fileType - Type of file (e.g., 'csv', 'txt').
    */
-  constructor(filePath, archiveFolderName, fileType) {
+  constructor(filePath, fileType) {
     this.filePath = path.resolve(projectDir, filePath);
-    this.archiveFolderName = archiveFolderName;
     this.fileType = fileType;
 
-    // Ensure the directory exists before writing
+    // Ensure the directory exists
     this.checkDirPath();
-
-    // Archive the file if it already exists
-    if (fs.existsSync(this.filePath)) {
-      this.archiveFile();
-    }
   }
 
   /**
@@ -78,12 +74,13 @@ class FileWriter {
       const timestamp = getUTCTimeStamp(createdDate);
       const [year, month] = getUTCYearMonth(createdDate);
 
+      const archiveFolder = path.basename(this.filePath, `.${this.fileType}`);
       // Define the archive directory path based on year and month
       const archiveDir = path.join(
         projectDir,
         "resources",
         this.fileType,
-        this.archiveFolderName,
+        archiveFolder,
         `${year}`,
         `${month}`
       );
@@ -115,7 +112,7 @@ class FileWriter {
  * Utility class to write data to a CSV file
  * extends the FileWriter class.
  */
-class CSVFileWriter extends FileWriter {
+class CSVFileWriter extends FileHandler {
   /**
    * Class Constructor for CSVFileWriter.
    * @param {string} filePath - Path to the CSV file to write to.
@@ -191,7 +188,7 @@ class CSVFileReader {
  * Utility class to write data to a TXT file.
  * Ensures the output directory exists and archives existing files with timestamps.
  */
-class TXTFileWriter extends FileWriter {
+class TXTFileWriter extends FileHandler {
   /**
    * @param {string} filePath - Path to the TXT file to write to.
    * @param {string} archiveFolderName - Folder name (inside resources/text/) where old versions will be archived.
@@ -213,5 +210,86 @@ class TXTFileWriter extends FileWriter {
   }
 }
 
-export { CSVFileWriter, CSVFileReader, TXTFileWriter };
+/**
+ * Excel file reader/writer built on top of FileHandler.
+ */
+class ExcelFileHandler extends FileHandler {
+  /**
+   * @param {string} filePath - Relative path to the Excel file.
+   */
+  constructor(filePath) {
+    super(filePath, "xlsx"); // Call the parent constructor with file type set to 'xlsx'
+    this.workbook = new ExcelJS.Workbook(); // Initialize a new Excel workbook instance
+  }
+
+  /**
+   * Reads the Excel file and returns an array of JSON objects,
+   * mapping the first row as header keys.
+   *
+   * @returns {Promise<Array<Object>>} JSON array representing each row in the sheet
+   */
+  async read() {
+    await this.workbook.xlsx.readFile(this.filePath);
+
+    // Get the first worksheet in the workbook
+    const worksheet = this.workbook.worksheets[0];
+
+    // Extract the headers
+    const headerRow = worksheet.getRow(1);
+    const headers = headerRow.values.slice(1);
+
+    const data = [];
+    worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+      if (rowNumber === 1) return; // Skip header row
+
+      const rowData = {};
+      headers.forEach((header, index) => {
+        rowData[header] = row.getCell(index + 1).value;
+      });
+
+      data.push(rowData);
+    });
+
+    return data;
+  }
+
+  /**
+   * Writes an array of JSON objects to the Excel file.
+   * The first row will be written as headers.
+   * Optionally archives the existing file before overwriting.
+   *
+   * @param {Array<Object>} data - Array of objects to write as rows
+   * @param {boolean} archive - Whether to archive the existing file before writing
+   */
+  async write(data, archive = true) {
+    // Validate the data input
+    if (!Array.isArray(data) || data.length === 0) {
+      throw new Error("Data must be a non-empty array.");
+    }
+
+    // If enabled and file exists, archive the old file first
+    if (archive && fs.existsSync(this.filePath)) {
+      this.archiveFile();
+    }
+
+    // Add a new worksheet to the workbook
+    const worksheet = this.workbook.addWorksheet();
+
+    // Extract headers from the keys of the first data object
+    const headers = Object.keys(data[0]);
+    if (headers.length === 0) {
+      throw new Error("Data objects must have at least one key.");
+    }
+
+    worksheet.addRow(headers);
+    data.forEach((item) => {
+      const row = headers.map((key) => item[key]);
+      worksheet.addRow(row);
+    });
+
+    await this.workbook.xlsx.writeFile(this.filePath);
+  }
+}
+
+export { CSVFileWriter, CSVFileReader, TXTFileWriter, ExcelFileHandler };
 // const csvWriter = new CSVFileWriter("resources/csv/shop_details.csv", "shopDetails");
