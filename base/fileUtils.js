@@ -115,10 +115,9 @@ class FileHandler {
 class TXTFileWriter extends FileHandler {
   /**
    * @param {string} filePath - Path to the TXT file to write to.
-   * @param {string} archiveFolderName - Folder name (inside resources/text/) where old versions will be archived.
    */
-  constructor(filePath, archiveFolderName) {
-    super(filePath, archiveFolderName, "txt"); // Call the parent constructor with fileType as "txt"
+  constructor(filePath) {
+    super(filePath, "txt"); // Call the parent constructor with fileType as "txt"
   }
 
   /**
@@ -148,21 +147,25 @@ class ExcelFileHandler extends FileHandler {
 
   /**
    * Reads the Excel file and returns an array of JSON objects,
-   * mapping the first row as header keys.
+   * with optional filtering and row mapping.
    *
-   * @returns {Promise<Array<Object>>} JSON array representing each row in the sheet
+   * @param {Function} filter - A function to filter rows (default: include all rows).
+   * @param {Function|null} rowMap - A function to map/transform each row (default: null).
+   * @returns {Promise<Array<Object>>} JSON array of filtered/mapped rows.
    */
-  async read() {
+  async read(filter = () => true, rowMap = null) {
+    // Load the Excel file into the workbook
     await this.workbook.xlsx.readFile(this.filePath);
 
     // Get the first worksheet in the workbook
     const worksheet = this.workbook.worksheets[0];
 
-    // Extract the headers
+    // Extract headers from the first row
     const headerRow = worksheet.getRow(1);
-    const headers = headerRow.values.slice(1);
+    const headers = headerRow.values.slice(1); // Skip empty cell at index 0
 
     const data = [];
+
     worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
       if (rowNumber === 1) return; // Skip header row
 
@@ -171,7 +174,10 @@ class ExcelFileHandler extends FileHandler {
         rowData[header] = row.getCell(index + 1).value;
       });
 
-      data.push(rowData);
+      // Apply filter and map if applicable
+      if (filter(rowData)) {
+        data.push(rowMap ? rowMap(rowData) : rowData);
+      }
     });
 
     return data;
@@ -205,6 +211,7 @@ class ExcelFileHandler extends FileHandler {
       throw new Error("Data objects must have at least one key.");
     }
 
+    // Add the headers and data to the worksheet
     worksheet.addRow(headers);
     data.forEach((item) => {
       const row = headers.map((key) => item[key]);
@@ -215,5 +222,5 @@ class ExcelFileHandler extends FileHandler {
   }
 }
 
-export { CSVFileWriter, CSVFileReader, TXTFileWriter, ExcelFileHandler };
+export { TXTFileWriter, ExcelFileHandler };
 // const csvWriter = new CSVFileWriter("resources/csv/shop_details.csv", "shopDetails");

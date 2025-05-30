@@ -2,8 +2,11 @@ import { chromium } from "playwright";
 import { scrapeGoogleShopUrl, scrapeGoogleShopDetails } from "./shopScaper.js";
 
 async function main() {
+  // If RUN_HEADLESS is not set, default to true, otherwise use the environment variable value
+  const runHeadless = (process.env.RUN_HEADLESS ?? "true") === "true";
+
   // Open the browser
-  const browser = await chromium.launch({ headless: process.env.RUN_HEADLESS });
+  const browser = await chromium.launch({ headless: runHeadless });
   const context = await browser.newContext({ ignoreHTTPSErrors: true });
 
   // Scraping

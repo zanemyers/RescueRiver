@@ -30,9 +30,10 @@ They support both **local** and **Docker-based** development, with flexible conf
 
 #### 🧰 Recommended Extensions
 
-- CSV by ReprEng
+- Container Tools by Microsoft
 - Docker by Microsoft
 - Docker DX by Docker
+- Excel Viewer by MESCIUS
 - GitHub Copilot by GitHub
 - Prettier - Code formatter by Prettier
 
@@ -50,14 +51,14 @@ They support both **local** and **Docker-based** development, with flexible conf
 
 - Run `just setup_env` in the terminal to create your `.env` file
   - Follow the prompts
-  - You can re-run the command or edit the file manually anytime
+  - You can edit the file manually to update your configuration
 
 ### 📦 Key Packages
 
 - **Parsing & Dates:** Chrono-Node, Date-FNS
 - **CLI & Environment:** Enquirer, Dotenv
 - **Scraping:** Playwright
-- **CSV Handling:** Fast-CSV
+- **XLSX File Handling:** Exceljs
 - **AI Integration:** Google/Genai
 
 ---
@@ -99,10 +100,10 @@ Set these in your `.env` file.
 
 ### 🗺️ Google Maps Shop Scraper
 
-| Variable              | Description                                               |
-| --------------------- | --------------------------------------------------------- |
-| `STARTING_URL`        | Google Maps list URL to begin scraping                    |
-| `MAX_SCROLL_DURATION` | Time to scroll and load results (ms, e.g., `30000` = 30s) |
+| Variable          | Description                                               |
+| ----------------- | --------------------------------------------------------- |
+| `STARTING_URL`    | Google Maps list URL to begin scraping                    |
+| `SCROLL_DURATION` | Time to scroll and load results (ms, e.g., `30000` = 30s) |
 
 ### 🎣 Fishing Report Scraper
 
@@ -110,7 +111,7 @@ Set these in your `.env` file.
 | ---------------------- | ------------------------------------------------------------------------------------------- |
 | `GOOGLE_GENAI_API_KEY` | [API key](https://aistudio.google.com/app/apikey) for accessing Google's GenAI              |
 | `GOOGLE_GENAI_MODEL`   | The [GenAI model](https://ai.google.dev/gemini-api/docs/models) to use (e.g., `gemini-pro`) |
-| `MAX_TOKENS_PER_CHUNK` | Token limit per chunk when summarizing reports                                              |
+| `TOKEN_LIMIT`          | Token limit per chunk when summarizing reports                                              |
 | `MAX_REPORT_AGE`       | Max age of reports to include (in days)                                                     |
 | `FILTER_BY_RIVER`      | Enable or disable river filtering (`true` or `false`)                                       |
 | `IMPORTANT_RIVERS`     | Comma-separated list of river names to prioritize (e.g. `'Snake','Colorado'`)               |
@@ -121,7 +122,7 @@ Set these in your `.env` file.
 
 Pulls business data from Google Maps and associated websites, compiling the results into a structured CSV.
 
-### 🔍 Features
+### 🔍 How it Works
 
 - Scrolls and collects all visible shops from a given Google Maps URL
 - Extracts contact info, links, and ratings from the Google listing
@@ -133,16 +134,16 @@ Pulls business data from Google Maps and associated websites, compiling the resu
 
 ## 🎣 Fishing Report Scraper (In-Progress)
 
-Analyzes fishing reports from websites. Uses a CSV with these headers:
+Analyzes fishing reports from websites. Uses a Excel file with these headers:
 
-- `URL`
-- `Last Updated`
-- `Selector`
-- `Keywords`
-- `Junk Words`
-- `Click Phrases`
+- `url`
+- `last-updated`
+- `selector`
+- `keywords`
+- `junk-words`
+- `click-phrases`
 
-### 🧠 Intended Features
+### 🧠 Intended Functionality
 
 - Detect and summarize river conditions and activity from fishing reports
 - Filter by river name
@@ -154,7 +155,7 @@ Analyzes fishing reports from websites. Uses a CSV with these headers:
 
 ### 🗺️ Google Maps Shop Scraper
 
-- May hang while scrolling (controlled by `MAX_SCROLL_DURATION`)
+- May hang while scrolling (controlled by `SCROLL_DURATION`)
 - Email scraping is unreliable
 - Some business pages are blocked or fail to load
 - Requires headless mode in Docker

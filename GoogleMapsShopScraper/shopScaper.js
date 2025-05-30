@@ -19,8 +19,8 @@ const shop_details = new ExcelFileHandler("resources/csv/shop_details.csv");
  *
  * @returns {Promise<string[]>} - A promise that resolves to an array of unique Google Maps URLs found on the page.
  */
-async function scrapeGoogleShopUrl(browserContext, url) {
-  const page = await browserContext.newPage();
+async function scrapeGoogleShopUrl(context, url) {
+  const page = await context.newPage();
   let spinner;
 
   try {
@@ -34,13 +34,12 @@ async function scrapeGoogleShopUrl(browserContext, url) {
 
     let endOfListText = false;
     const scrollStart = Date.now();
+    const scrollDuration = parseInt(process.env.SCROLL_DURATION, 10) || 30000;
 
     while (!endOfListText) {
       // Throw an error if scrolling takes more than 30 secondes (probably hung)
-      if (Date.now() - scrollStart > process.env.MAX_SCROLL_DURATION) {
-        throw new Error(
-          MESSAGES.ERROR_SCROLL_TIMEOUT(process.env.MAX_SCROLL_DURATION)
-        );
+      if (Date.now() - scrollStart > scrollDuration) {
+        throw new Error(MESSAGES.ERROR_SCROLL_TIMEOUT(scrollDuration));
       }
 
       // Scroll to the bottom to load more items
@@ -68,6 +67,8 @@ async function scrapeGoogleShopUrl(browserContext, url) {
         .filter((href) => href.startsWith("https://www.google.com/maps/place/"))
     );
 
+    // TODO: I should normalize the urls before pushing them to the Set
+
     // Remove duplicate URLs using a Set
     const urls = Array.from(new Set(rawUrls));
 
@@ -87,27 +88,27 @@ async function scrapeGoogleShopUrl(browserContext, url) {
 
 /**
  * Scrapes shop details from a list of Google Maps URLs using a shared browser context.
- * For each shop, it gathers name, category, phone, website, reviews, and additional data from the shop's website.
- * Failed shops and missing website details are tracked for reporting.
- * A small delay is used between iterations to avoid throttling.
+ * Then gathers additional data from the shop's website.
  *
- * @param {BrowserContext} browserContext - The Playwright browser context to use for all pages.
+ * @param {BrowserContext} context - The Playwright browser context to use for all pages.
  * @param {string[]} urls - An array of Google Maps URLs representing individual shop pages.
  */
-async function scrapeGoogleShopDetails(browserContext, urls) {
+async function scrapeGoogleShopDetails(context, urls) {
   const noWebsite = []; // Shop names with no website information
   const allShopDetails = []; // Shop details collected from scraping
-  const failedGoogleShops = []; // Failed Google shop URLs and details
+  const failedGoogleShops = []; // Shop URLs that failed to load
+
+  const batchSize = parseInt(process.env.BATCH_SIZE, 10) || 5; // Default batch size if not set in environment variables
 
   // Loops over all URLs, processing them in batches
-  for (let i = 0; i < urls.length; i += process.env.BATCH_SIZE) {
-    const batch = urls.slice(i, i + process.env.BATCH_SIZE); // Get a slice of URLs for the current batch
+  for (let i = 0; i < urls.length; i += batchSize) {
+    const batch = urls.slice(i, i + batchSize); // Get a slice of URLs for the current batch
 
     // Runs scraping for each URL in the batch using Promise.all
     const results = await Promise.all(
       batch.map(async (url, batchIndex) => {
         const index = i + batchIndex; // Calculates the global index of the current URL
-        const page = await browserContext.newPage();
+        const page = await context.newPage();
         await addShopSelectors(page); // Add custom selectors
 
         try {

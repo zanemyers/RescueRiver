@@ -29,7 +29,7 @@ const questions = [
   },
   {
     type: "numeral",
-    name: "MAX_TOKENS_PER_CHUNK",
+    name: "TOKEN_LIMIT",
     message: "Enter max tokens per chunk:",
     hint: "Fewer = faster, more = greater context.",
     float: false,
@@ -75,7 +75,7 @@ const questions = [
   },
   {
     type: "numeral",
-    name: "MAX_SCROLL_DURATION",
+    name: "SCROLL_DURATION",
     message: "Enter the max scroll duration (ms):",
     hint: "How long to wait for Google Maps before timing out.",
     float: false,
@@ -141,13 +141,13 @@ const questions = [
       `# Google GenAI API configuration\n` +
       `GOOGLE_GENAI_API_KEY="${answers.GOOGLE_GENAI_API_KEY}"\n` +
       `GOOGLE_GENAI_MODEL="${answers.GOOGLE_GENAI_MODEL}"\n` +
-      `MAX_TOKENS_PER_CHUNK=${answers.MAX_TOKENS_PER_CHUNK}\n\n` +
+      `TOKEN_LIMIT=${answers.TOKEN_LIMIT}\n\n` +
       `# General Scraper configuration\n` +
       `RUN_HEADLESS=${answers.RUN_HEADLESS}\n` +
       `BATCH_SIZE=${answers.BATCH_SIZE}\n\n` +
       `# Google Maps Shop Scraper configuration\n` +
       `STARTING_URL="${answers.STARTING_URL}"\n` +
-      `MAX_SCROLL_DURATION=${answers.MAX_SCROLL_DURATION}\n\n` +
+      `SCROLL_DURATION=${answers.SCROLL_DURATION}\n\n` +
       `# Fishing report filtering configuration\n` +
       `MAX_REPORT_AGE=${answers.MAX_REPORT_AGE_DAYS}\n` +
       `FILTER_BY_RIVER=${answers.FILTER_BY_RIVER}\n` +
