@@ -1,7 +1,7 @@
 import { differenceInDays } from "date-fns";
 
 import { REPORT_DIVIDER } from "../base/enums.js";
-import { CSVFileReader } from "../base/fileUtils.js";
+import { ExcelFileHandler } from "../base/fileUtils.js";
 import { normalizeUrl } from "../base/scrapingUtils.js";
 import { extractMostRecentDate } from "../base/dateUtils.js";
 
@@ -16,16 +16,14 @@ import { extractMostRecentDate } from "../base/dateUtils.js";
  *
  * @returns {Promise<Array<{ name: string, website: string }>>} List of filtered shop info
  */
-async function getUrlsFromCSV() {
-  // Initialize the CSV file reader
-  const reader = new CSVFileReader(
-    "resources/csv/shop_details.csv", // Path to the CSV file
-    (row) => row["publishesFishingReport"] === "true", // filter function
-    (row) => row["website"]
-  );
+async function getUrlsFromXLSX() {
+  const reader = new ExcelFileHandler("resources/xlsx/shop_details.xlsx");
 
-  // Read the CSV to get website URLs that publish fishing reports
-  return await reader.read();
+  // Read the Excel file to get URLs for sites that publish fishing reports
+  return await reader.read(
+    (row) => row["Has Report"] === "true",
+    (row) => row["Website"]
+  );
 }
 
 /**
@@ -174,13 +172,14 @@ function filterReports(reports) {
   return reports.filter((report) => {
     // Get the most recent date from the report text
     const reportDate = extractMostRecentDate(report);
+    const reportAgeLimit = parseInt(process.env.MAX_REPORT_AGE, 10) || 100; // Default to 30 days if not set
 
     // If no dates found exclude it
     if (!reportDate) return false;
 
     // Exclude reports older than specified number of days
     const daysDifference = differenceInDays(new Date(), reportDate);
-    if (daysDifference > process.env.MAX_REPORT_AGE) return false;
+    if (daysDifference > reportAgeLimit) return false;
 
     // Exclude if no important rivers mentioned
     // if (!includesAny(report, process.env.IMPORTANT_RIVERS)) return false;
@@ -199,7 +198,7 @@ function estimateTokenCount(text) {
  *
  * Chunks are formed by grouping sections separated by REPORT_DIVIDER.
  * Each chunk will contain as many full sections as possible without exceeding
- * the MAX_TOKENS_PER_CHUNK environment variable.
+ * the TOKEN_LIMIT environment variable.
  *
  * @param {string} text - Full fishing report text to be chunked.
  * @returns {string[]} Array of text chunks, each under the token limit.
@@ -207,6 +206,7 @@ function estimateTokenCount(text) {
 function chunkReportText(text) {
   const reports = text.split(REPORT_DIVIDER); // Split the text into individual reports
   const chunks = []; // Array to store the final chunks
+  const tokenLimit = parseInt(process.env.TOKEN_LIMIT, 10);
 
   let currentChunk = ""; // Current chunk being built
   let currentTokens = 0; // Estimated token count for the current chunk
@@ -215,7 +215,7 @@ function chunkReportText(text) {
     const section = report + REPORT_DIVIDER; // Re-add the divider to each section
     const tokens = estimateTokenCount(section); // Estimate tokens in this section
 
-    if (currentTokens + tokens > process.env.MAX_TOKENS_PER_CHUNK) {
+    if (currentTokens + tokens > tokenLimit) {
       // If adding this section exceeds the token limit, finalize the current chunk
       chunks.push(currentChunk.trim());
       currentChunk = section; // Start a new chunk with this section
@@ -242,7 +242,7 @@ export {
   extractAnchors,
   filterReports,
   getPriority,
-  getUrlsFromCSV,
+  getUrlsFromXLSX,
   includesAny,
   isSameDomain,
   scrapeVisibleText,

@@ -1,4 +1,4 @@
-import { CSVFileWriter } from "../base/fileUtils.js";
+import { ExcelFileHandler } from "../base/fileUtils.js";
 import { MESSAGES } from "../base/enums.js";
 import { addShopSelectors } from "./shopScrapingUtils.js";
 import { normalizeUrl } from "../base/scrapingUtils.js";
@@ -9,25 +9,12 @@ import {
 } from "../base/terminalUtils.js";
 
 // Initialize CSV file writer
-const shopDetailCSV = new CSVFileWriter(
-  "resources/csv/shop_details.csv",
-  "shopDetails"
-);
+const shop_details = new ExcelFileHandler("resources/csv/shop_details.csv");
 
 /**
- * Scrapes Google Maps URLs from a given page by scrolling to the bottom and collecting all the relevant URLs.
+ * Scrapes business entries from a given Google Maps URLs.
  *
- * This function:
- * 1. Navigates to the provided URL.
- * 2. Waits for the content to load by checking for the presence of a specific selector (`[role="feed"]`).
- * 3. Scrolls down to ensure all URLs are loaded.
- * 4. Scrapes all anchor links (`<a>`) that start with "https://www.google.com/maps/place/".
- * 5. Removes duplicate URLs using a Set.
- * 6. Returns the list of unique Google Maps URLs found on the page.
- *
- * If any error occurs during the process, the function logs the error and terminates the program.
- *
- * @param {Object} browserContext - The Playwright browser context used to create a new page.
+ * @param {BrowserContext} context - The Playwright browser context used to create a new page.
  * @param {string} url - The URL to scrape for Google Maps links.
  *
  * @returns {Promise<string[]>} - A promise that resolves to an array of unique Google Maps URLs found on the page.
@@ -155,20 +142,20 @@ async function scrapeGoogleShopDetails(browserContext, urls) {
             extraDetails = await scrapeWebsite(page, website); // Scrape details from the shop's website
           }
 
-          // Construct an object to hold all shop details
+          // Construct an object to hold all shop details (keys will be used as Excel headers)
           const shopDetails = {
-            index: index + 1,
-            name,
-            category,
-            phone,
-            email: extraDetails.email,
-            hasWebsite: website !== MESSAGES.NO_WEB,
-            website,
-            sellsOnline: extraDetails.sellsOnline,
-            stars,
-            reviewCount,
-            publishesFishingReport: extraDetails.fishingReport,
-            socialMedia: extraDetails.socialMedia,
+            Index: index + 1,
+            Name: name,
+            Category: category,
+            Phone: phone,
+            Email: extraDetails.email,
+            "Has Website": website !== MESSAGES.NO_WEB,
+            Website: website,
+            "Sells Online": extraDetails.sellsOnline,
+            Rating: `${stars}/5`,
+            Reviews: reviewCount,
+            "Has Report": extraDetails.fishingReport,
+            Socials: extraDetails.socialMedia,
           };
 
           // Return successful result with shop details
@@ -198,7 +185,7 @@ async function scrapeGoogleShopDetails(browserContext, urls) {
   }
 
   // Write all successfully scraped shop details to a CSV file
-  await shopDetailCSV.bulkWrite(allShopDetails);
+  await shop_details.write(allShopDetails);
 
   // Print out details of shops with missing website or failed to scrape
   printMissingDetails(noWebsite, failedGoogleShops, failedWebsites);

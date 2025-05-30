@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { chromium } from "playwright";
 import { fishingReportScraper, makeReportSummary } from "./reportScrapers.js";
-import { getUrlsFromCSV, checkDuplicateUrls } from "./reportScrapingUtils.js";
+import { getUrlsFromXLSX, checkDuplicateUrls } from "./reportScrapingUtils.js";
 import { sites } from "./sites.js";
 
 async function main() {
