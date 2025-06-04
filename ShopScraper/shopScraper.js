@@ -152,12 +152,7 @@ async function scrapeWebsite(page, url) {
 
   let details;
   try {
-    const response = await page.goto(normalizedUrl, {
-      waitUntil: "domcontentloaded",
-      timeout: 10000,
-    });
-
-    page.simulateUserInteraction(); // Simulate user interaction to avoid bot detection
+    const response = await page.goAndWiggle(normalizedUrl); // Open the page and wiggle the mouse
 
     // Check if the request was blocked or rate-limited
     const status = response?.status();
