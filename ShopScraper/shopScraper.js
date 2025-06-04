@@ -1,7 +1,6 @@
 import dotenv from "dotenv";
 import fs from "fs/promises";
 import ora from "ora";
-import { chromium } from "playwright";
 import { getJson } from "serpapi";
 import { PromisePool } from "@supercharge/promise-pool";
 
@@ -11,13 +10,16 @@ import {
   buildShopRows,
   loadCachedShops,
 } from "./shopUtils.js";
-import { normalizeUrl } from "../base/scrapingUtils.js";
+import { normalizeUrl, StealthBrowser } from "../base/scrapingUtils.js";
 import { ExcelFileHandler } from "../base/fileUtils.js";
 
 // Load environment variables from .env file
 dotenv.config();
 
 // Initialize class variables
+const browser = new StealthBrowser({
+  headless: process.env.HEADLESS !== "false",
+});
 const shopWriter = new ExcelFileHandler("resources/xlsx/shop_details.xlsx");
 const websiteCache = new Map();
 
@@ -25,18 +27,13 @@ async function main() {
   // Initalize spinner instance
   const spinner = ora();
 
-  // Initialize Playwright browser context
-  const browser = await chromium.launch({
-    headless: process.env.RUN_HEADLESS !== "false",
-  });
-  const context = await browser.newContext();
-
   try {
     spinner.start("Searching for shops...");
     const shops = await fetchShops();
     spinner.succeed(`Found ${shops.length} shops.`);
 
-    const shopDetails = await getDetails(shops, context);
+    await browser.launch();
+    const shopDetails = await getDetails(shops);
     const rows = buildShopRows(shops, shopDetails);
 
     spinner.start(`Writing shop data to Excel...`);
@@ -103,10 +100,9 @@ async function fetchShops() {
  * system resources or triggering anti-bot protections. Shops without websites are skipped.
  *
  * @param {Array<object>} shops - The list of shops to scrape extra details from.
- * @param {BrowserContext} context - The browser context used to create new pages.
  * @returns {Promise<Array<object>>} - A list of detail objects (one per shop), with fallback values on failure.
  */
-async function getDetails(shops, context) {
+async function getDetails(shops) {
   const total = shops.length;
   const results = new Array(total);
   let completed = 0;
@@ -120,7 +116,7 @@ async function getDetails(shops, context) {
       if (!shop.website) {
         results[index] = FALLBACK_DETAILS.NONE;
       } else {
-        const page = await addShopSelectors(await context.newPage());
+        const page = await addShopSelectors(await browser.newPage());
         try {
           results[index] = await scrapeWebsite(page, shop.website);
         } catch (err) {
@@ -160,6 +156,8 @@ async function scrapeWebsite(page, url) {
       waitUntil: "domcontentloaded",
       timeout: 10000,
     });
+
+    page.simulateUserInteraction(); // Simulate user interaction to avoid bot detection
 
     // Check if the request was blocked or rate-limited
     const status = response?.status();

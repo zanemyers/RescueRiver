@@ -12,9 +12,106 @@
  * - `normalizeUrl(url)`: Cleans up a URL by removing query strings, hashes, 'www.', and trailing slashes,
  *   returning a consistent and canonical form.
  */
+import { chromium } from "playwright-extra";
+import StealthPlugin from "puppeteer-extra-plugin-stealth";
 
-// TODO: Implement the startPlaywright function to initialize Playwright and set up the browser context.
-async function startPlaywright() {}
+// Enable plugins
+chromium.use(StealthPlugin());
+
+class StealthBrowser {
+  constructor(options = {}) {
+    this.headless = options.headless ?? true;
+    this.args = options.args ?? ["--start-maximized", "--no-sandbox"];
+
+    const agentProfile = this._getAgentProfile();
+    this.userAgent = options.userAgent ?? agentProfile.userAgent;
+    this.locale = options.locale ?? agentProfile.locale;
+    this.timezoneId = options.timezoneId ?? agentProfile.timezoneId;
+
+    this.browser = null;
+    this.context = null;
+  }
+
+  async launch() {
+    this.browser = await chromium.launch({
+      headless: this.headless,
+      args: this.args,
+    });
+
+    this.context = await this.browser.newContext({
+      viewport: this._getViewport(),
+      userAgent: this.userAgent,
+      locale: this.locale,
+      timezoneId: this.timezoneId,
+    });
+
+    return this;
+  }
+
+  async _customActions(page) {
+    // Simulate user interaction
+    page.simulateUserInteraction = async function () {
+      await page.mouse.move(100, 100);
+      await page.mouse.move(200, 300);
+      await page.mouse.click(200, 300);
+    };
+  }
+
+  _getAgentProfile() {
+    const agentProfiles = [
+      {
+        userAgent:
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+        locale: "en-US",
+        timezoneId: "America/New_York",
+      },
+      {
+        userAgent:
+          "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:114.0) Gecko/20100101 Firefox/114.0",
+        locale: "de-DE",
+        timezoneId: "Europe/Berlin",
+      },
+      {
+        userAgent:
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36",
+        locale: "en-GB",
+        timezoneId: "Europe/London",
+      },
+      {
+        userAgent:
+          "Mozilla/5.0 (Linux; Android 10; Pixel 4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Mobile Safari/537.36",
+        locale: "en-CA",
+        timezoneId: "America/Toronto",
+      },
+    ];
+
+    return agentProfiles[Math.floor(Math.random() * agentProfiles.length)];
+  }
+
+  _getViewport() {
+    const viewports = [
+      { width: 1366, height: 768 },
+      { width: 1440, height: 900 },
+      { width: 1536, height: 864 },
+      { width: 1920, height: 1080 },
+      { width: 1280, height: 800 },
+    ];
+
+    return viewports[Math.floor(Math.random() * viewports.length)];
+  }
+
+  async newPage() {
+    const page = await this.context.newPage();
+    await this._customActions(page);
+    return page;
+  }
+
+  async close() {
+    if (this.browser) {
+      await this.browser.close();
+    }
+  }
+}
 
 async function extendPageSelectors(page) {
   /**
@@ -127,4 +224,4 @@ function normalizeUrl(url) {
   }
 }
 
-export { extendPageSelectors, normalizeUrl };
+export { extendPageSelectors, normalizeUrl, StealthBrowser };
