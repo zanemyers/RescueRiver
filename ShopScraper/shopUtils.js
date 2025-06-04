@@ -91,7 +91,7 @@ async function addShopSelectors(page) {
   page.getEmailFromHref = async function () {
     try {
       const email = await page.getAttByLocator('a[href^="mailto:"]', "href");
-      return email ? email.replace("mailto:", "") : null;
+      return email ? email.replace("mailto:", "").split("?")[0] : null;
     } catch {
       return null;
     }
@@ -105,7 +105,9 @@ async function addShopSelectors(page) {
   page.getEmailFromText = async function () {
     try {
       const bodyText = await page.getTextContent("body");
-      const match = bodyText?.match(EMAIL_REGEX);
+      const match = bodyText
+        .replace(/([a-zA-Z])(?=[A-Z])/g, "$1 ")
+        .match(EMAIL_REGEX); // insert spaces between mashed-together words
       return match ? match[0] : null;
     } catch {
       return null;

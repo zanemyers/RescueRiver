@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+### [unreleased](https://github.com/zanemyers/RescueRiver/compare/v2.0...HEAD)
+
+#### Added
+
+#### Changed
+
+#### Deprecated
+
 ### [2.1](https://github.com/zanemyers/RescueRiver/compare/v2.0...v2.1)
 
 #### Added
