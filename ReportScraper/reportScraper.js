@@ -1,5 +1,6 @@
 import "dotenv/config";
 import fs from "fs";
+import ora from "ora";
 
 import { MERGE_PROMPT, REPORT_DIVIDER, SUMMARY_PROMPT } from "../base/enums.js";
 import { TXTFileWriter } from "../base/fileUtils.js";
@@ -16,6 +17,8 @@ import {
 import { normalizeUrl } from "../base/scrapingUtils.js";
 
 async function main() {
+  // Initalize spinner instance
+  const spinner = ora();
   // TODO: we should run this occassionally and use chatGPT to see if there are new urls,
   // check those to see if they've updated recently and add them to the sites list of dictionaries
   // const urls = await getUrlsFromXLSX();
@@ -33,7 +36,9 @@ async function main() {
 
   //   browser.close();
 
-  makeReportSummary();
+  spinner.start("Generating report summary...");
+  await makeReportSummary();
+  spinner.succeed(`Finished!`);
 }
 
 /**
@@ -154,10 +159,7 @@ async function findFishingReports(page, site, maxVisits = 25) {
  */
 async function compileFishingReports(reports) {
   // Create a TXTFileWriter instance for writing and archiving reports
-  const reportWriter = new TXTFileWriter(
-    "resources/txt/fishing_reports.txt", // Output file path
-    "fishingReports" // Archive folder name
-  );
+  const reportWriter = new TXTFileWriter("resources/txt/fishing_reports.txt");
 
   // Filter reports based on date and keywords
   const filteredReports = filterReports(reports);
@@ -175,10 +177,7 @@ async function compileFishingReports(reports) {
  */
 async function makeReportSummary() {
   // Initialize a TXTFileWriter to write the AI-generated summary
-  const summaryWriter = new TXTFileWriter(
-    "resources/txt/summary.txt",
-    "reportSummaries"
-  );
+  const summaryWriter = new TXTFileWriter("resources/txt/report_summary.txt");
 
   // Read the raw fishing report text
   const fileText = fs.readFileSync(
@@ -197,11 +196,8 @@ async function makeReportSummary() {
     `${MERGE_PROMPT}\n\n${summaries.join("\n\n")}`
   );
 
-  console.log("AI Summary Generated:\n", finalResponse);
-
   // Write the AI-generated summary text to the output file
   await summaryWriter.write(finalResponse);
-  console.log("Finished.");
 }
 
 main().catch((err) => {

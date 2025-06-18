@@ -106,6 +106,10 @@ class FileHandler {
       throw err;
     }
   }
+
+  write(archive = true) {
+    if (archive && fs.existsSync(this.filePath)) this.archiveFile();
+  }
 }
 
 /**
@@ -123,7 +127,10 @@ class TXTFileWriter extends FileHandler {
   /**
    * Writes data to the TXT file.
    */
-  async write(data) {
+  async write(data, archive = true) {
+    // Call archiving logic from base class
+    super.write(archive);
+
     try {
       await writeFile(this.filePath, data, "utf8");
     } catch (error) {
@@ -191,12 +198,13 @@ class ExcelFileHandler extends FileHandler {
    * @param {boolean} archive - Whether to archive the existing file before writing
    */
   async write(data, archive = true) {
+    // Call archiving logic from base class
+    super.write(archive);
+
     // Validate the data input
     if (!Array.isArray(data) || data.length === 0) {
       throw new Error("Data must be a non-empty array.");
     }
-
-    if (archive && fs.existsSync(this.filePath)) this.archiveFile();
 
     const headers = Object.keys(data[0]); // Use the keys of the first object as headers
     if (headers.length === 0) {
