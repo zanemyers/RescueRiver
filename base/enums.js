@@ -86,8 +86,7 @@ const SUMMARY_PROMPT = `
     - If the date is in the body and not in the date field, add it to the date field.
     - If an article contains reports for mulitple bodies of water break them into separate entries based on the body of water.
 
-    # 1. Mississippi River
-    (River Specifics)
+    # 1. Mississippi River (Water Type/s, ex: river, lake, resevoir, creek, fork)
     * Date: (Date of report)
     (Fly Fishing Specifics)
     * Fly Patterns: (list of fly fishing fly patterns mentioned)

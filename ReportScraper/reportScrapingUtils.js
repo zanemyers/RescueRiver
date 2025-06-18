@@ -1,4 +1,5 @@
 import { differenceInDays } from "date-fns";
+import { GoogleGenAI } from "@google/genai";
 
 import { REPORT_DIVIDER } from "../base/enums.js";
 import { ExcelFileHandler } from "../base/fileUtils.js";
@@ -235,12 +236,26 @@ function chunkReportText(text) {
   return chunks;
 }
 
+// Initialize the Google GenAI client with your API key
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY, // IMPORTANT: Set in environment variables
+});
+
+async function generateContent(prompt) {
+  const response = await ai.models.generateContent({
+    model: process.env.GEMINI_MODEL,
+    contents: prompt,
+  });
+  return response.text.trim();
+}
+
 export {
   checkDuplicateUrls,
   chunkReportText,
   estimateTokenCount,
   extractAnchors,
   filterReports,
+  generateContent,
   getPriority,
   getUrlsFromXLSX,
   includesAny,

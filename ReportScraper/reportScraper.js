@@ -1,5 +1,5 @@
+import "dotenv/config";
 import fs from "fs";
-import { GoogleGenAI } from "@google/genai";
 
 import { MERGE_PROMPT, REPORT_DIVIDER, SUMMARY_PROMPT } from "../base/enums.js";
 import { TXTFileWriter } from "../base/fileUtils.js";
@@ -8,11 +8,33 @@ import {
   chunkReportText,
   extractAnchors,
   filterReports,
+  generateContent,
   getPriority,
   isSameDomain,
 } from "./reportScrapingUtils.js";
 
 import { normalizeUrl } from "../base/scrapingUtils.js";
+
+async function main() {
+  // TODO: we should run this occassionally and use chatGPT to see if there are new urls,
+  // check those to see if they've updated recently and add them to the sites list of dictionaries
+  // const urls = await getUrlsFromXLSX();
+
+  // If RUN_HEADLESS is not set, default to true, otherwise use the environment variable value
+  const runHeadless = (process.env.RUN_HEADLESS ?? "true") === "true";
+
+  //   const normalizedSites = await checkDuplicateUrls(sites);
+
+  //   const browser = await chromium.launch({ headless: false });
+  //   const context = await browser.newContext({ ignoreHTTPSErrors: true });
+
+  //   // // await fishingReportScraper(context, urls);
+  //   await fishingReportScraper(context, normalizedSites);
+
+  //   browser.close();
+
+  makeReportSummary();
+}
 
 /**
  * Scrapes fishing reports from a list of site objects and writes them to a text file.
@@ -152,11 +174,6 @@ async function compileFishingReports(reports) {
  * and writes the summary to an output file.
  */
 async function makeReportSummary() {
-  // Initialize the Google GenAI client with your API key
-  const ai = new GoogleGenAI({
-    apiKey: process.env.GOOGLE_GENAI_API_KEY, // IMPORTANT: Set in environment variables
-  });
-
   // Initialize a TXTFileWriter to write the AI-generated summary
   const summaryWriter = new TXTFileWriter(
     "resources/txt/summary.txt",
@@ -173,25 +190,20 @@ async function makeReportSummary() {
 
   const summaries = [];
   for (const chunk of chunks) {
-    const summary = await ai.models.generateContent({
-      model: process.env.GOOGLE_GENAI_MODEL,
-      contents: `${chunk}\n\n ${SUMMARY_PROMPT}`,
-    });
-    summaries.push(summary.text.trim());
+    summaries.push(await generateContent(`${chunk}\n\n${SUMMARY_PROMPT}`));
   }
 
-  const mergedPrompt = `${MERGE_PROMPT}\n\n${summaries.join("\n\n")}`;
+  const finalResponse = await generateContent(
+    `${MERGE_PROMPT}\n\n${summaries.join("\n\n")}`
+  );
 
-  const finalResponse = await ai.models.generateContent({
-    model: process.env.GOOGLE_GENAI_MODEL,
-    contents: mergedPrompt,
-  });
-
-  console.log("AI Summary Generated:\n", finalResponse.text);
+  console.log("AI Summary Generated:\n", finalResponse);
 
   // Write the AI-generated summary text to the output file
-  await summaryWriter.write(finalResponse.text);
+  await summaryWriter.write(finalResponse);
   console.log("Finished.");
 }
 
-export { fishingReportScraper, makeReportSummary };
+main().catch((err) => {
+  console.error("Fatal error:", err);
+});

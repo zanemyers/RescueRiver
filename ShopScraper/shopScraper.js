@@ -1,4 +1,4 @@
-import dotenv from "dotenv";
+import "dotenv/config";
 import fs from "fs/promises";
 import ora from "ora";
 import { getJson } from "serpapi";
@@ -12,9 +12,6 @@ import {
 } from "./shopUtils.js";
 import { normalizeUrl, StealthBrowser } from "../base/scrapingUtils.js";
 import { ExcelFileHandler } from "../base/fileUtils.js";
-
-// Load environment variables from .env file
-dotenv.config();
 
 // Initialize class variables
 const browser = new StealthBrowser({
