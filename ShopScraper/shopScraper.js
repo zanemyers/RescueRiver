@@ -50,7 +50,7 @@ async function main() {
  * @returns {Promise<object[]>} A list of local shops, or an empty array if none found.
  */
 async function fetchShops() {
-  const cacheFile = "./assets/exampleFiles/shops.json"; // TODO: Allow user to pass this in
+  const cacheFile = "./assets/example_files/shops.json"; // TODO: Allow user to pass this in
   const meta = {
     query: process.env.SEARCH_QUERY,
     coordinates: process.env.SEARCH_COORDINATES,

@@ -20,11 +20,11 @@ Set these in your `.env` file.
 
 ### 📈 Report Scraper
 
-| Variable               | Description                                                                                 |
-| ---------------------- | ------------------------------------------------------------------------------------------- |
-| `GOOGLE_GENAI_API_KEY` | [API key](https://aistudio.google.com/app/apikey) for accessing Google's GenAI              |
-| `GOOGLE_GENAI_MODEL`   | The [GenAI model](https://ai.google.dev/gemini-api/docs/models) to use (e.g., `gemini-pro`) |
-| `MAX_TOKENS_PER_CHUNK` | Token limit per chunk when summarizing reports                                              |
-| `MAX_REPORT_AGE`       | Max age of reports to include (in days)                                                     |
-| `FILTER_BY_RIVER`      | Enable or disable river filtering (`true` or `false`)                                       |
-| `IMPORTANT_RIVERS`     | Comma-separated list of river names to prioritize (e.g. `'Snake','Colorado'`)               |
+| Variable               | Description                                                                                  |
+| ---------------------- | -------------------------------------------------------------------------------------------- |
+| `GEMINI_API_KEY`       | [API key](https://aistudio.google.com/app/apikey) for accessing Gemini                       |
+| `GEMINI_MODEL`         | The [Gemini model](https://ai.google.dev/gemini-api/docs/models) to use (e.g., `gemini-pro`) |
+| `MAX_TOKENS_PER_CHUNK` | Token limit per chunk when summarizing reports                                               |
+| `MAX_REPORT_AGE`       | Max age of reports to include (in days)                                                      |
+| `FILTER_BY_RIVER`      | Enable or disable river filtering (`true` or `false`)                                        |
+| `IMPORTANT_RIVERS`     | Comma-separated list of river names to prioritize (e.g. `'Snake','Colorado'`)                |
