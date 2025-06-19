@@ -30,7 +30,13 @@ async function main() {
   try {
     // STEP 1: Read and deduplicate site list
     spinner.start("Reading Sites from file...");
-    const sites = ExcelFileHandler.read(); // Load raw site data
+
+    // Initialize the excel file handler instance with a filepathf
+    const reader = new ExcelFileHandler(
+      "assets/example_files/report_scraper_ex.xlsx"
+    );
+
+    const sites = await reader.read(); // Read the excel file into a JSON dict
     const siteList = await checkDuplicateSites(sites); // Filter out duplicates
     spinner.succeed(`Found ${siteList.length} sites to scrape!`);
 

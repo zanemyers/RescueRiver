@@ -19,27 +19,6 @@ if (!aiKey || !aiModel) {
 }
 
 /**
- * Reads an Excel (.xlsx) file containing shop details and returns a filtered list of shops
- * that publish reports.
- *
- * The Excel file is expected to have at least these columns:
- * - "Has Report": A string indicating if the shop publishes fishing reports ("true"/"false").
- * - "Website": The website URL of the shop.
- *
- * @returns {Promise<Array<string>>} Promise resolving to an array of website URLs of shops publishing reports.
- */
-async function getUrlsFromXLSX() {
-  // Initialize the ExcelFileHandler with the path to the Excel file
-  const reader = new ExcelFileHandler("media/xlsx/shop_details.xlsx");
-
-  // Use the reader to filter rows where "Has Report" is "true" and extract the "Website" column
-  return await reader.read(
-    (row) => row["Has Report"] === "true",
-    (row) => row["Website"]
-  );
-}
-
-/**
  * Normalize URLs for each site and remove duplicates based on normalized URLs.
  *
  * This async function processes an array of site objects, normalizing each site's URL.
@@ -312,7 +291,6 @@ export {
   filterReports,
   generateContent,
   getPriority,
-  getUrlsFromXLSX,
   includesAny,
   isSameDomain,
   scrapeVisibleText,
