@@ -167,7 +167,7 @@ class ExcelFileHandler extends FileHandler {
    * @param {Function|null} rowMap - A function to map/transform each row (default: null).
    * @returns {Promise<Array<Object>>} JSON array of filtered/mapped rows.
    */
-  async read(filter = () => true, rowMap = null) {
+  async read(listCols = [], filter = () => true, rowMap = null) {
     // Load the Excel file into the workbook
     await this.workbook.xlsx.readFile(this.filePath);
 
@@ -185,7 +185,17 @@ class ExcelFileHandler extends FileHandler {
 
       const rowData = {};
       headers.forEach((header, index) => {
-        rowData[header] = row.getCell(index + 1).value;
+        const cellValue = row.getCell(index + 1).value;
+
+        if (typeof cellValue === "string" && listCols.includes(header)) {
+          // Split by comma and trim each item
+          rowData[header] = cellValue
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean); // Remove empty strings
+        } else {
+          rowData[header] = cellValue;
+        }
       });
 
       // Apply filter and map if applicable

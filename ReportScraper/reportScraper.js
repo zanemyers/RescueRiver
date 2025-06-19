@@ -36,7 +36,11 @@ async function main() {
       "assets/example_files/report_scraper_ex.xlsx"
     );
 
-    const sites = await reader.read(); // Read the excel file into a JSON dict
+    // Read the excel file into a JSON dict
+    const sites = await reader.read(
+      ["keywords", "junk-words", "click-phrases"] // listCols
+    );
+
     const siteList = await checkDuplicateSites(sites); // Filter out duplicates
     spinner.succeed(`Found ${siteList.length} sites to scrape!`);
 
