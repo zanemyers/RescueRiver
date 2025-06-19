@@ -117,7 +117,7 @@ async function scrapeReports(sites) {
  * links—prioritized by relevance until it either exhausts the
  * crawl queue or reaches the maximum crawl depth.
  *
- * @param {import('playwright').Page} page - The Playwright page instance used for navigation.
+ * @param {Object} page - The Playwright page instance used for navigation.
  * @param {Object} site - An object representing the site to crawl. Includes `url` and optional `selector`.
  * @returns {Promise<string[]>} - A list of strings containing report content and their source URLs.
  */
