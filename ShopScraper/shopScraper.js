@@ -17,7 +17,7 @@ import { ExcelFileHandler } from "../base/fileUtils.js";
 const browser = new StealthBrowser({
   headless: process.env.RUN_HEADLESS !== "false",
 });
-const shopWriter = new ExcelFileHandler("resources/xlsx/shop_details.xlsx");
+const shopWriter = new ExcelFileHandler("media/xlsx/shop_details.xlsx");
 const websiteCache = new Map();
 
 async function main() {

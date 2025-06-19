@@ -1,10 +1,9 @@
 {
     "search.exclude": {
       "**/assets": true,
-      "**/deprecated": true,
       "**/docs": true,
       "**/node_modules": true,
-      "**/resources": true,
+      "**/media": true,
     }
   }
   

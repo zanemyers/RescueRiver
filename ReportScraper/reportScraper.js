@@ -159,7 +159,7 @@ async function findFishingReports(page, site, maxVisits = 25) {
  */
 async function compileFishingReports(reports) {
   // Create a TXTFileWriter instance for writing and archiving reports
-  const reportWriter = new TXTFileWriter("resources/txt/fishing_reports.txt");
+  const reportWriter = new TXTFileWriter("media/txt/fishing_reports.txt");
 
   // Filter reports based on date and keywords
   const filteredReports = filterReports(reports);
@@ -177,13 +177,10 @@ async function compileFishingReports(reports) {
  */
 async function makeReportSummary() {
   // Initialize a TXTFileWriter to write the AI-generated summary
-  const summaryWriter = new TXTFileWriter("resources/txt/report_summary.txt");
+  const summaryWriter = new TXTFileWriter("media/txt/report_summary.txt");
 
   // Read the raw fishing report text
-  const fileText = fs.readFileSync(
-    "resources/txt/fishing_reports.txt",
-    "utf-8"
-  );
+  const fileText = fs.readFileSync("media/txt/fishing_reports.txt", "utf-8");
 
   const chunks = chunkReportText(fileText); // Split the text into manageable chunks
 

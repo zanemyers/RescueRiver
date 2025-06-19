@@ -18,7 +18,7 @@ import { extractMostRecentDate } from "../base/dateUtils.js";
  * @returns {Promise<Array<{ name: string, website: string }>>} List of filtered shop info
  */
 async function getUrlsFromXLSX() {
-  const reader = new ExcelFileHandler("resources/xlsx/shop_details.xlsx");
+  const reader = new ExcelFileHandler("media/xlsx/shop_details.xlsx");
 
   // Read the Excel file to get URLs for sites that publish fishing reports
   return await reader.read(

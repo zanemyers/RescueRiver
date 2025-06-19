@@ -78,7 +78,7 @@ class FileHandler {
       // Define the archive directory path based on year and month
       const archiveDir = path.join(
         projectDir,
-        "resources",
+        "media",
         this.fileType,
         archiveFolder,
         `${year}`,
