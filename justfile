@@ -34,7 +34,7 @@ rs *FLAGS:
     #!/usr/bin/env sh
     if [[ "{{FLAGS}}" == *"-l"* ]]; then  # Check for local flag (-l)
         if [[ "{{FLAGS}}" == *"-d"* ]]; then  # Check for debug flag (-d)
-            node --inspect ReportScraper/reportScraper.js
+            DEBUGGING=true node --inspect ReportScraper/reportScraper.js
         else
             node ReportScraper/reportScraper.js
         fi

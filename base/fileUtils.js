@@ -116,12 +116,19 @@ class FileHandler {
  * Utility class to write data to a TXT file.
  * Ensures the output directory exists and archives existing files with timestamps.
  */
-class TXTFileWriter extends FileHandler {
+class TXTFileHandler extends FileHandler {
   /**
    * @param {string} filePath - Path to the TXT file to write to.
    */
   constructor(filePath) {
     super(filePath, "txt"); // Call the parent constructor with fileType as "txt"
+  }
+
+  /**
+   * Reads data from the TXT file
+   */
+  async read() {
+    return fs.readFileSync(this.filePath, "utf-8");
   }
 
   /**
@@ -222,4 +229,4 @@ class ExcelFileHandler extends FileHandler {
   }
 }
 
-export { TXTFileWriter, ExcelFileHandler };
+export { TXTFileHandler, ExcelFileHandler };

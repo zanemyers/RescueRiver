@@ -20,10 +20,10 @@ const browser = new StealthBrowser({
 const shopWriter = new ExcelFileHandler("media/xlsx/shop_details.xlsx");
 const websiteCache = new Map();
 
-async function main() {
-  // Initalize spinner instance
-  const spinner = ora();
+// Initalize spinner instance
+const spinner = ora();
 
+async function main() {
   try {
     spinner.start("Searching for shops...");
     const shops = await fetchShops();
@@ -100,12 +100,11 @@ async function fetchShops() {
  * @returns {Promise<Array<object>>} - A list of detail objects (one per shop), with fallback values on failure.
  */
 async function getDetails(shops) {
-  const total = shops.length;
-  const results = new Array(total);
+  const results = new Array(shops.length);
   let completed = 0;
 
-  const messageTemplate = (done) => `Scraping shops (${done}/${total})`;
-  const spinner = ora(messageTemplate(completed)).start();
+  const messageTemplate = (done) => `Scraping shops (${done}/${shops.length})`;
+  spinner.start(messageTemplate(completed));
 
   await PromisePool.withConcurrency(parseInt(process.env.CONCURRENCY, 10) || 5)
     .for(shops)

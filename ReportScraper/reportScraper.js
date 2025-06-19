@@ -1,10 +1,11 @@
 import "dotenv/config";
-import fs from "fs";
 import ora from "ora";
+import { PromisePool } from "@supercharge/promise-pool";
 
 import { MERGE_PROMPT, REPORT_DIVIDER, SUMMARY_PROMPT } from "../base/enums.js";
-import { TXTFileWriter } from "../base/fileUtils.js";
+import { ExcelFileHandler, TXTFileHandler } from "../base/fileUtils.js";
 import {
+  checkDuplicateSites,
   scrapeVisibleText,
   chunkReportText,
   extractAnchors,
@@ -14,187 +15,220 @@ import {
   isSameDomain,
 } from "./reportScrapingUtils.js";
 
-import { normalizeUrl } from "../base/scrapingUtils.js";
+import { normalizeUrl, StealthBrowser } from "../base/scrapingUtils.js";
+
+// Initialize spinner instance
+const spinner = ora();
+
+// Initialize .env variables
+const concurrency = Math.max(1, parseInt(process.env.CONCURRENCY, 10) || 5);
+const crawlDepth = Math.max(1, parseInt(process.env.CRAWL_DEPTH, 10) || 25);
+const runHeadless = process.env.RUN_HEADLESS !== "false";
+const debugging = process.env.DEBUGGING === "true";
 
 async function main() {
-  // Initalize spinner instance
-  const spinner = ora();
-  // TODO: we should run this occassionally and use chatGPT to see if there are new urls,
-  // check those to see if they've updated recently and add them to the sites list of dictionaries
-  // const urls = await getUrlsFromXLSX();
+  try {
+    // STEP 1: Read and deduplicate site list
+    spinner.start("Reading Sites from file...");
+    const sites = ExcelFileHandler.read(); // Load raw site data
+    const siteList = await checkDuplicateSites(sites); // Filter out duplicates
+    spinner.succeed(`Found ${siteList.length} sites to scrape!`);
 
-  // If RUN_HEADLESS is not set, default to true, otherwise use the environment variable value
-  const runHeadless = (process.env.RUN_HEADLESS ?? "true") === "true";
+    // STEP 2: Scrape fishing reports from each site
+    const reports = await scrapeReports(siteList);
 
-  //   const normalizedSites = await checkDuplicateUrls(sites);
+    // STEP 3: Filter and compile reports (if any found)
+    if (reports.length > 0) {
+      spinner.start("Compiling reports...");
+      const filteredReports = filterReports(reports); // Filter out old reports
+      const compiledReports = filteredReports.join(REPORT_DIVIDER); // Join with section divider
+      spinner.succeed("Compiling complete!");
 
-  //   const browser = await chromium.launch({ headless: false });
-  //   const context = await browser.newContext({ ignoreHTTPSErrors: true });
-
-  //   // // await fishingReportScraper(context, urls);
-  //   await fishingReportScraper(context, normalizedSites);
-
-  //   browser.close();
-
-  spinner.start("Generating report summary...");
-  await makeReportSummary();
-  spinner.succeed(`Finished!`);
-}
-
-/**
- * Scrapes fishing reports from a list of site objects and writes them to a text file.
- *
- * Each site object should include:
- *   - `url` (string): The base URL of the fishing shop to crawl.
- *   - `selector` (string): The CSS selector to extract the report content.
- *   - `lastUpdated` (string): A human-readable date string for when the report was last confirmed.
- *
- * @param {import('playwright').BrowserContext} context - Playwright browser context to isolate each page.
- * @param {{ url: string, selector: string, lastUpdated: string }[]} sites - List of site objects to crawl.
- * @returns {Promise<void>} - Resolves when all reports are gathered and written.
- */
-async function fishingReportScraper(context, sites) {
-  const reports = [];
-
-  for (const site of sites) {
-    const page = await context.newPage();
-    try {
-      const siteReports = await findFishingReports(page, site); // returns array of reports
-      reports.push(...siteReports);
-    } catch (error) {
-      console.error(`Error scraping ${site.url}:`, error);
-    } finally {
-      await page.close();
+      // STEP 4: Generate a summary using Gemini
+      spinner.start("Generating report summary...");
+      await generateSummary(compiledReports);
+      spinner.succeed("Finished!");
+    } else {
+      console.log("No reports found."); // Handle empty result set
     }
+  } catch (err) {
+    spinner.fail(`Error: ${err}`);
   }
-
-  await compileFishingReports(reports);
-  await makeReportSummary();
 }
 
 /**
- * Crawls a fishing shop website starting from a given URL,
- * prioritizing internal links that are more likely to contain fishing reports
- * based on a list of prioritized keywords.
+ * Scrapes report content from a list of sites.
  *
- * Navigates the site up to `maxVisits` pages, collects visible text content,
- * and returns an array of reports with their source URLs.
+ * For each site, opens a new page in the browser, runs a prioritized crawl to extract
+ * visible report-like text, and compiles all results into a flat array.
  *
- * @param {import('playwright').Page} page - The Playwright page object.
- * @param {string} startUrl - The starting URL to begin crawling from.
- * @param {number} maxVisits - Maximum number of pages to visit.
- * @returns {Promise<string[]>} - A list of report texts with source URLs.
+ * @param {Array<Object>} sites - List of site objects to crawl.
+ * @returns {Promise<string[]>} - All collected report texts from the provided sites.
  */
-async function findFishingReports(page, site, maxVisits = 25) {
-  const visited = new Set(); // Keep track of visited URLs
-  const toVisit = [{ url: site.url, priority: -1 }]; // Queue of URLs to visit
-  const baseHostname = new URL(site.url).hostname; // pull hostname to restrict crawling domains
-  const reports = []; // Array to store fishing reports
+async function scrapeReports(sites) {
+  // Initialize the stealth browser (headless unless overridden by env)
+  const browser = new StealthBrowser({ headless: runHeadless });
 
-  // Continue crawling as long as there are URLs to visit and we haven't reached the visit limit
-  while (toVisit.length > 0 && visited.size < maxVisits) {
-    const { url } = toVisit.shift(); // Take the next URL to visit
-    if (visited.has(url)) continue; // Skip if visited
-    visited.add(url); // Mark this URL as visited
+  try {
+    await browser.launch(); // Start the browser session
 
-    // Try to navigate to the page; skip if navigation fails
+    let completed = 0; // Track how many sites have been processed
+
+    const messageTemplate = (done) =>
+      `Scraping sites (${done}/${sites.length}) for reports...`;
+
+    spinner.start(messageTemplate(completed));
+
+    // Run site scraping in parallel
+    const { results } = await PromisePool.withConcurrency(concurrency)
+      .for(sites)
+      .process(async (site) => {
+        const page = await browser.newPage(); // Open a new tab for the site
+        try {
+          const reports = await findReports(page, site); // Crawl and collect reports
+          spinner.text = messageTemplate(++completed); // Update progress
+          return reports;
+        } catch (error) {
+          console.error(`Error scraping ${site.url}:`, error);
+          return [];
+        } finally {
+          await page.close(); // Always close the tab to prevent leaks
+        }
+      });
+
+    // Flatten all site results and remove empty entries
+    const reports = results.flat().filter(Boolean);
+
+    spinner.succeed(`Found ${reports.length} total reports!`);
+
+    return reports;
+  } catch (err) {
+    spinner.fail(`Error: ${err}`);
+    return [];
+  } finally {
+    await browser.close(); // Ensure browser shuts down regardless of success/failure
+  }
+}
+
+/**
+ * Crawls a shop website to extract potential reports.
+ *
+ * Starting from the provided site URL, this function navigates through internal
+ * links—prioritized by relevance until it either exhausts the
+ * crawl queue or reaches the maximum crawl depth.
+ *
+ * @param {import('playwright').Page} page - The Playwright page instance used for navigation.
+ * @param {Object} site - An object representing the site to crawl. Includes `url` and optional `selector`.
+ * @returns {Promise<string[]>} - A list of strings containing report content and their source URLs.
+ */
+async function findReports(page, site) {
+  const visited = new Set(); // Tracks URLs that have already been visited
+  const toVisit = [{ url: site.url, priority: -1 }]; // URLs queued for crawling
+  const baseHostname = new URL(site.url).hostname; // Restrict to same domain
+  const reports = []; // Collected report texts
+
+  // Crawl loop: continue while there are URLs to visit and we haven't hit the crawl limit
+  while (toVisit.length > 0 && visited.size < crawlDepth) {
+    const { url } = toVisit.shift(); // Get the next URL
+    if (visited.has(url)) continue;
+    visited.add(url);
+
+    // Navigate to the page
     try {
-      await page.goto(url, { timeout: 10000, waitUntil: "domcontentloaded" });
+      await page.load(url);
     } catch (error) {
       console.error(`Error navigating to ${url}:`, error);
       continue;
     }
 
-    // Scrape visible text only if the URL is not the base site URL
+    // Scrape visible content from subpages (not the homepage)
     if (url !== site.url) {
       const text = await scrapeVisibleText(page, site.selector);
       if (text) {
-        // Store the scraped text with the source URL for reference
         reports.push(`${text}\nSource: ${url}`);
       }
     }
 
-    const pageLinks = await extractAnchors(page); // Extract all anchor links (href + visible text)
+    // Extract all anchor links from the page
+    const pageLinks = await extractAnchors(page);
 
-    // Process each link on the page to evaluate if it should be queued
     for (const { href, linkText } of pageLinks) {
-      if (!isSameDomain(href, baseHostname)) continue; // Ignore links to different domains
+      if (!isSameDomain(href, baseHostname)) continue;
 
-      const link = normalizeUrl(href); // normalize for consistent comparison
+      const link = normalizeUrl(href);
 
-      // Skip if we've already visited or queued the url
+      // Avoid revisiting or duplicating queued links
       if (visited.has(link) || toVisit.some((item) => item.url === link))
         continue;
 
-      const priority = getPriority(url, link, linkText, site); // Determine the priority of the link
+      // Rank link by priority (based on keywords, etc.)
+      const priority = getPriority(url, link, linkText, site);
 
-      // Only add the link to the queue if it has a valid priority
+      // Only queue links that are considered valid and useful
       if (priority !== Infinity) {
         toVisit.push({ url: link, priority });
       }
     }
 
-    // re-sort the queue so that highest priority URLs come first
+    // Sort queue so high-priority URLs are visited first
     toVisit.sort((a, b) => a.priority - b.priority);
   }
 
-  // Log if we stopped crawling because we reached the max visit limit
-  if (visited.size >= maxVisits) {
-    console.log(`Reached max visits limit for site: ${maxVisits}`);
+  // Debug output for optimization
+  if (debugging) {
+    if (visited.size >= crawlDepth) {
+      console.log(`Reached crawl depth limit for the site.`);
+    }
+    console.log("VISITED:", visited);
+    console.log("TO VISIT:", toVisit);
   }
-
-  // FOR TESTING TO OPTIMIZE SITE KEYWORDS
-  // console.log("VISITED:");
-  // console.log(visited);
-  // console.log("TO VISIT");
-  // console.log(toVisit);
 
   return reports;
 }
 
 /**
- * Compiles an array of fishing report texts into a single formatted file.
+ * Generates a summarized report using the Gemini AI model.
  *
- * @param {string[]} reports - An array of report texts, each already tagged with a source.
+ * This function takes a string, splits it into bite size chunks, then
+ * summarizes each chunk in parallel and writes the output to a text file,
+ *
+ * @param {string} report - The full text content of the compiled reports.
  */
-async function compileFishingReports(reports) {
-  // Create a TXTFileWriter instance for writing and archiving reports
-  const reportWriter = new TXTFileWriter("media/txt/fishing_reports.txt");
+async function generateSummary(report) {
+  try {
+    const summaryWriter = new TXTFileHandler("media/txt/report_summary.txt");
 
-  // Filter reports based on date and keywords
-  const filteredReports = filterReports(reports);
+    // Split the compiled report into smaller chunks (based on token limits)
+    const chunks = chunkReportText(report);
 
-  // Combine all filtered report entries into a single string
-  const compiledReports = filteredReports.join(REPORT_DIVIDER);
+    // Use PromisePool to summarize each chunk concurrently
+    const { results, errors } = await PromisePool.withConcurrency(concurrency)
+      .for(chunks)
+      .process(async (chunk) => {
+        return await generateContent(`${chunk}\n\n${SUMMARY_PROMPT}`);
+      });
 
-  // Write the final compiled content to the file
-  await reportWriter.write(compiledReports);
-}
+    // Log any failed chunk summaries
+    if (errors.length > 0) {
+      console.error("Some summaries failed:", errors);
+    }
 
-/**
- * Summarizes fishing reports from a text file using the Gemini AI model
- * and writes the summary to an output file.
- */
-async function makeReportSummary() {
-  // Initialize a TXTFileWriter to write the AI-generated summary
-  const summaryWriter = new TXTFileWriter("media/txt/report_summary.txt");
+    // If no summaries were successfully generated, skip final merging
+    if (results.length === 0) {
+      console.warn("No summaries generated. Skipping final summary.");
+      return;
+    }
 
-  // Read the raw fishing report text
-  const fileText = fs.readFileSync("media/txt/fishing_reports.txt", "utf-8");
+    // Merge the individual summaries into a final summary
+    const finalResponse = await generateContent(
+      `${MERGE_PROMPT}\n\n${results.join("\n\n")}`
+    );
 
-  const chunks = chunkReportText(fileText); // Split the text into manageable chunks
-
-  const summaries = [];
-  for (const chunk of chunks) {
-    summaries.push(await generateContent(`${chunk}\n\n${SUMMARY_PROMPT}`));
+    // Write the final summary to the output file
+    await summaryWriter.write(finalResponse);
+  } catch (err) {
+    console.error("Error generating summary:", err);
   }
-
-  const finalResponse = await generateContent(
-    `${MERGE_PROMPT}\n\n${summaries.join("\n\n")}`
-  );
-
-  // Write the AI-generated summary text to the output file
-  await summaryWriter.write(finalResponse);
 }
 
 main().catch((err) => {

@@ -37,28 +37,28 @@ async function getUrlsFromXLSX() {
  * @param {Array} sites - Array of site objects with a `url` property.
  * @returns {Array} A new array of site objects with normalized, unique URLs.
  */
-async function checkDuplicateUrls(sites) {
+async function checkDuplicateSites(sites) {
   const urlsSet = new Set(); // Track normalized URLs to detect duplicates
-  const normalizedSites = []; // Store unique, normalized site objects
+  const siteList = []; // Store unique, normalized site objects
 
   for (const site of sites) {
-    const normalized = await normalizeUrl(site.url); // Normalize the URL
+    const url = await normalizeUrl(site.url); // Normalize the URL
 
-    if (!urlsSet.has(normalized)) {
-      urlsSet.add(normalized);
+    if (!urlsSet.has(url)) {
+      urlsSet.add(url);
 
       // Add a new site object with the normalized URL
-      normalizedSites.push({
+      siteList.push({
         ...site,
-        url: normalized,
+        url: url,
       });
     } else {
       // Log a warning if the normalized URL was already seen
-      console.warn("Duplicate found:", normalized);
+      console.warn("Duplicate found:", url);
     }
   }
 
-  return normalizedSites;
+  return siteList;
 }
 
 /**
@@ -250,7 +250,7 @@ async function generateContent(prompt) {
 }
 
 export {
-  checkDuplicateUrls,
+  checkDuplicateSites,
   chunkReportText,
   estimateTokenCount,
   extractAnchors,
