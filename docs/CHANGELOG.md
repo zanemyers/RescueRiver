@@ -2,7 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
-### [2.2](https://github.com/zanemyers/RescueRiver/compare/v2.1...v2.2)
+### [Unreleased](https://github.com/zanemyers/RescueRiver/compare/v2.0...HEAD)
+
+> (DATE)
+
+#### Added
+
+#### Changed
+
+#### Deprecated
+
+### [v2.2](https://github.com/zanemyers/RescueRiver/compare/v2.1...v2.2)
+
+> 18 June 2025
 
 #### Added
 
@@ -18,7 +30,9 @@ All notable changes to this project will be documented in this file.
 - Improved email scraping accuracy and robustness.
 - Switched shop scraper to use `StealthBrowser` instead of default Playwright browser.
 
-### [2.1](https://github.com/zanemyers/RescueRiver/compare/v2.0...v2.1)
+### [v2.1](https://github.com/zanemyers/RescueRiver/compare/v2.0...v2.1)
+
+> 2 June 2025
 
 #### Added
 
@@ -37,6 +51,8 @@ All notable changes to this project will be documented in this file.
 - Removed Excel index column from `shop_details.xlsx`
 
 ### [v2.0](https://github.com/zanemyers/RescueRiver/compare/v1.1...v2.0)
+
+> 2 June 2025
 
 #### Added
 
