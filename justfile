@@ -18,26 +18,33 @@ setup_env:
 # Runs the Shop Scraper, either locally or inside Docker.
 ss *FLAGS:
     #!/usr/bin/env sh
-    if [[ "{{FLAGS}}" == *"-l"* ]]; then  # Check for local flag (-l)
-        if [[ "{{FLAGS}}" == *"-d"* ]]; then  # Check for debug flag (-d)
-            node --inspect ShopScraper/shopScraper.js
-        else
-            node ShopScraper/shopScraper.js
-        fi
+    if [[ "{{FLAGS}}" == *"-l"* ]]; then  # Local flag
+        node ShopScraper/shopScraper.js
     else
         just dcrr web-scraper node ShopScraper/shopScraper.js
     fi
 
+# Runs the shop scraper in debug mode (VS Code ONLY)
+# TODO: Fix so it works with WebStorm too
+debug_ss:
+    node --inspect ShopScraper/shopScraper.js
 
 # Runs the Report Scraper, either locally or inside Docker.
 rs *FLAGS:
     #!/usr/bin/env sh
-    if [[ "{{FLAGS}}" == *"-l"* ]]; then  # Check for local flag (-l)
-        if [[ "{{FLAGS}}" == *"-d"* ]]; then  # Check for debug flag (-d)
-            node --inspect ReportScraper/main.js
-        else
-            node ReportScraper/main.js
-        fi
+    if [[ "{{FLAGS}}" == *"-l"* ]]; then  # Local flag
+        node ReportScraper/reportScraper.js
     else
-        just dcrr web-scraper node ReportScraper/main.js
+        just dcrr web-scraper node ReportScraper/reportScraper.js
     fi
+
+# Runs the report scraper in debug mode (VS Code ONLY)
+# TODO: Fix so it works with WebStorm too
+debug_rs:
+    node --inspect ReportScraper/reportScraper.js
+
+@lint:
+    eslint . --fix
+
+@format:
+    prettier --write . --log-level silent

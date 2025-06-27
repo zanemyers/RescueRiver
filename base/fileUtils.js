@@ -15,7 +15,6 @@ import { writeFile } from "fs/promises";
 import ExcelJS from "exceljs";
 
 import { getUTCTimeStamp, getUTCYearMonth } from "./dateUtils.js";
-import { ar } from "date-fns/locale";
 
 // Get the directory name of the current module
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -29,7 +28,6 @@ const projectDir = path.resolve(__dirname, "..");
 class FileHandler {
   /**
    * @param {string} filePath - The path to the file.
-   * @param {string} archiveFolderName - Folder name to store archived versions.
    * @param {string} fileType - Type of file (e.g., 'csv', 'txt').
    */
   constructor(filePath, fileType) {
@@ -78,7 +76,7 @@ class FileHandler {
       // Define the archive directory path based on year and month
       const archiveDir = path.join(
         projectDir,
-        "resources",
+        "media",
         this.fileType,
         archiveFolder,
         `${year}`,
@@ -92,10 +90,7 @@ class FileHandler {
       const baseName = path.basename(this.filePath, `.${this.fileType}`);
 
       // Construct the full path for the archived file, including the timestamp
-      const archivedFile = path.join(
-        archiveDir,
-        `${baseName}_${timestamp}.${this.fileType}`
-      );
+      const archivedFile = path.join(archiveDir, `${baseName}_${timestamp}.${this.fileType}`);
 
       // Rename the original file to the archived file path
       fs.renameSync(this.filePath, archivedFile);
@@ -106,13 +101,17 @@ class FileHandler {
       throw err;
     }
   }
+
+  write(archive = true) {
+    if (archive && fs.existsSync(this.filePath)) this.archiveFile();
+  }
 }
 
 /**
  * Utility class to write data to a TXT file.
  * Ensures the output directory exists and archives existing files with timestamps.
  */
-class TXTFileWriter extends FileHandler {
+class TXTFileHandler extends FileHandler {
   /**
    * @param {string} filePath - Path to the TXT file to write to.
    */
@@ -121,9 +120,19 @@ class TXTFileWriter extends FileHandler {
   }
 
   /**
+   * Reads data from the TXT file
+   */
+  async read() {
+    return fs.readFileSync(this.filePath, "utf-8");
+  }
+
+  /**
    * Writes data to the TXT file.
    */
-  async write(data) {
+  async write(data, archive = true) {
+    // Call archiving logic from base class
+    super.write(archive);
+
     try {
       await writeFile(this.filePath, data, "utf8");
     } catch (error) {
@@ -149,11 +158,12 @@ class ExcelFileHandler extends FileHandler {
    * Reads the Excel file and returns an array of JSON objects,
    * with optional filtering and row mapping.
    *
+   * @param listCols - A list of columns that can have multiple values
    * @param {Function} filter - A function to filter rows (default: include all rows).
    * @param {Function|null} rowMap - A function to map/transform each row (default: null).
    * @returns {Promise<Array<Object>>} JSON array of filtered/mapped rows.
    */
-  async read(filter = () => true, rowMap = null) {
+  async read(listCols = [], filter = () => true, rowMap = null) {
     // Load the Excel file into the workbook
     await this.workbook.xlsx.readFile(this.filePath);
 
@@ -171,7 +181,17 @@ class ExcelFileHandler extends FileHandler {
 
       const rowData = {};
       headers.forEach((header, index) => {
-        rowData[header] = row.getCell(index + 1).value;
+        const cellValue = row.getCell(index + 1).value;
+
+        if (typeof cellValue === "string" && listCols.includes(header)) {
+          // Split by comma and trim each item
+          rowData[header] = cellValue
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean); // Remove empty strings
+        } else {
+          rowData[header] = cellValue;
+        }
       });
 
       // Apply filter and map if applicable
@@ -188,23 +208,25 @@ class ExcelFileHandler extends FileHandler {
    * Optionally archives the existing file before overwriting.
    *
    * @param {Array<Object>} data - Array of objects to write as rows
-   * @param {boolean} archive - Whether to archive the existing file before writing
+   * @param {boolean} archive - Whether to archive the file or append data to the current file
    */
   async write(data, archive = true) {
-    // Validate the data input
     if (!Array.isArray(data) || data.length === 0) {
       throw new Error("Data must be a non-empty array.");
     }
 
-    if (archive && fs.existsSync(this.filePath)) this.archiveFile();
+    // Archive existing file if needed
+    await super.write(archive);
 
-    const headers = Object.keys(data[0]); // Use the keys of the first object as headers
-    if (headers.length === 0) {
-      throw new Error("Data objects must have at least one key.");
-    }
+    // Load workbook and get or create the first worksheet
+    await this.workbook.xlsx.readFile(this.filePath).catch(() => {});
+    const worksheet = this.workbook.worksheets[0] || this.workbook.addWorksheet();
 
-    const worksheet = this.workbook.addWorksheet();
-    worksheet.addRow(headers);
+    const headers = Object.keys(data[0]);
+    if (headers.length === 0) throw new Error("Data objects must have at least one key.");
+    if (worksheet.rowCount === 0) worksheet.addRow(headers);
+
+    // Add data rows
     data.forEach((item) => {
       const row = headers.map((key) => item[key]);
       worksheet.addRow(row);
@@ -214,4 +236,4 @@ class ExcelFileHandler extends FileHandler {
   }
 }
 
-export { TXTFileWriter, ExcelFileHandler };
+export { TXTFileHandler, ExcelFileHandler };

@@ -22,6 +22,8 @@
 import { chromium } from "playwright-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 
+import { BLOCKED_FORBIDDEN } from "./enums.js";
+
 // Enable plugins
 chromium.use(StealthPlugin());
 
@@ -86,22 +88,45 @@ class StealthBrowser {
     page.simulateUserInteraction = async function () {
       await page.mouse.move(100, 100);
       await page.mouse.move(200, 300);
-      await page.mouse.click(200, 300);
+      await page.mouse.move(50, 175);
     };
 
     /**
-     * Navigate to a given URL, wait until DOM content is loaded,
-     * then perform simulated user interaction.
-     * @param {string} url - URL to navigate to.
-     * @returns {Promise<import('playwright').Response>} Navigation response.
+     * Navigates to the given URL with retry support.
+     * Waits for the network to become idle, simulates basic user interaction,
+     *
+     * @param {string} url - The URL to visit.
+     * @param {number} [retries=2] - Maximum number of retry attempts.
+     * @returns {Promise<import('playwright').Response>} The response object from navigation.
+     * @throws {Error} If navigation fails after all retries or receives a blocked status.
      */
-    page.load = async function (url) {
-      const response = await page.goto(url, {
-        waitUntil: "domcontentloaded",
-        timeout: 10000,
-      });
-      await page.simulateUserInteraction();
-      return response;
+    page.load = async function (url, retries = 2) {
+      while (retries--) {
+        try {
+          const response = await page.goto(url, {
+            waitUntil: "domcontentloaded",
+            timeout: 15000,
+          });
+
+          // Don't retry blocked or forbidden sites
+          const status = response?.status();
+          if ([401, 403, 429].includes(status)) {
+            const content = await page.content();
+            if (BLOCKED_FORBIDDEN.some((text) => content.includes(text))) {
+              throw new Error(`Blocked or forbidden (HTTP ${status})`);
+            }
+          }
+
+          await page.simulateUserInteraction();
+          return response;
+        } catch (err) {
+          if (retries === 0 || /HTTP (401|403|429)/.test(err.message)) {
+            throw new Error(`Failed to load ${url}: ${err.message}`);
+          }
+
+          await new Promise((res) => setTimeout(res, 1000)); // delay before retry
+        }
+      }
     };
   }
 
@@ -119,8 +144,7 @@ class StealthBrowser {
         timezoneId: "America/New_York",
       },
       {
-        userAgent:
-          "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:114.0) Gecko/20100101 Firefox/114.0",
+        userAgent: "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:114.0) Gecko/20100101 Firefox/114.0",
         locale: "de-DE",
         timezoneId: "Europe/Berlin",
       },
@@ -209,11 +233,7 @@ async function extendPageSelectors(page) {
    * @returns {Promise<string|null>} - The value of the attribute, or null if not found.
    */
   page.getAttByLabel = async function (label, attribute, filter = {}) {
-    return await page.getAttByLocator(
-      `[aria-label*="${label}"]`,
-      attribute,
-      filter
-    );
+    return await page.getAttByLocator(`[aria-label*="${label}"]`, attribute, filter);
   };
 
   /**
@@ -225,11 +245,7 @@ async function extendPageSelectors(page) {
    * @returns {Promise<string|null>} - The text content of the element, or null if not found.
    */
   page.getTextContent = async function (locator, filter = {}) {
-    return await page
-      .locator(locator, { timeout: 1000 })
-      .filter(filter)
-      .first()
-      .textContent();
+    return await page.locator(locator, { timeout: 1000 }).filter(filter).first().textContent();
   };
 
   /**
@@ -281,14 +297,26 @@ function normalizeUrl(url) {
       u.pathname = u.pathname.slice(0, -1);
     }
 
-    // Remove 'www.' from the hostname if it exists
-    // CAN'T always do this :(
-    // u.hostname = u.hostname.replace(/^www\./, "");
-
     return u.href; // Use href to ensure a consistent absolute URL
   } catch {
     return url; // fallback to original if parsing fails
   }
 }
 
-export { extendPageSelectors, normalizeUrl, StealthBrowser };
+/**
+ * Compare two URLs by domain name, ignoring 'www.'
+ * @param {string} urlA
+ * @param {string} urlB
+ * @returns {boolean}
+ */
+function sameDomain(urlA, urlB) {
+  try {
+    const domainA = new URL(normalizeUrl(urlA)).hostname.replace(/^www\./, "").toLowerCase();
+    const domainB = new URL(normalizeUrl(urlB)).hostname.replace(/^www\./, "").toLowerCase();
+    return domainA === domainB;
+  } catch {
+    return false; // Treat invalid URLs as non-matching
+  }
+}
+
+export { extendPageSelectors, normalizeUrl, sameDomain, StealthBrowser };

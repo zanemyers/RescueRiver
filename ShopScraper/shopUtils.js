@@ -1,11 +1,6 @@
 import fs from "fs/promises";
 
-import {
-  MESSAGES,
-  EMAIL_REGEX,
-  SHOP_KEYWORDS,
-  SOCIAL_MEDIA_MAP,
-} from "../base/enums.js";
+import { EMAIL_REGEX, MESSAGES, SHOP_KEYWORDS, SOCIAL_MEDIA_MAP } from "../base/enums.js";
 
 /**
  * Adds custome scraper methods directly on the page instance for convenient use during scraping.
@@ -15,7 +10,7 @@ import {
  */
 async function addShopSelectors(page) {
   /**
-   * Checks if the page contains a link with "report" in it (case-insensitive).
+   *   Checks if the page contains a link with "report" in it (case-insensitive).
    *
    * @returns {Promise<boolean>} - `true` if the page contains the text, otherwise `false`.
    */
@@ -36,16 +31,11 @@ async function addShopSelectors(page) {
    */
   page.getSocialMedia = async function () {
     try {
-      const hrefs = await page.$$eval("a", (links) =>
-        links.map((link) => link.href.toLowerCase())
-      );
+      const hrefs = await page.$$eval("a", (links) => links.map((link) => link.href.toLowerCase()));
 
       const foundSocials = [];
       for (const { domain, name } of SOCIAL_MEDIA_MAP) {
-        if (
-          hrefs.some((href) => href.includes(domain)) &&
-          !foundSocials.includes(name)
-        ) {
+        if (hrefs.some((href) => href.includes(domain)) && !foundSocials.includes(name)) {
           foundSocials.push(name);
         }
       }
@@ -187,9 +177,7 @@ async function loadCachedShops(filePath, expectedMeta) {
     const data = await fs.readFile(filePath, "utf-8");
     const { meta, results } = JSON.parse(data);
 
-    const isMatch = Object.entries(expectedMeta).every(
-      ([key, val]) => meta?.[key] === val
-    );
+    const isMatch = Object.entries(expectedMeta).every(([key, val]) => meta?.[key] === val);
 
     return isMatch ? results : null;
   } catch (err) {
@@ -207,9 +195,7 @@ async function loadCachedShops(filePath, expectedMeta) {
  */
 function buildShopRows(shops, shopDetails) {
   if (shops.length !== shopDetails.length)
-    throw new Error(
-      `Shop count - ${shops.length} ≠ details count - ${shopDetails.length}`
-    );
+    throw new Error(`Shop count - ${shops.length} ≠ details count - ${shopDetails.length}`);
 
   return shops.map((shop, i) => {
     return {

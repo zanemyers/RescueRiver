@@ -1,32 +1,25 @@
-import dotenv from "dotenv";
+import "dotenv/config";
 import fs from "fs/promises";
 import ora from "ora";
 import { getJson } from "serpapi";
 import { PromisePool } from "@supercharge/promise-pool";
 
 import { FALLBACK_DETAILS } from "../base/enums.js";
-import {
-  addShopSelectors,
-  buildShopRows,
-  loadCachedShops,
-} from "./shopUtils.js";
+import { addShopSelectors, buildShopRows, loadCachedShops } from "./shopUtils.js";
 import { normalizeUrl, StealthBrowser } from "../base/scrapingUtils.js";
 import { ExcelFileHandler } from "../base/fileUtils.js";
-
-// Load environment variables from .env file
-dotenv.config();
 
 // Initialize class variables
 const browser = new StealthBrowser({
   headless: process.env.RUN_HEADLESS !== "false",
 });
-const shopWriter = new ExcelFileHandler("resources/xlsx/shop_details.xlsx");
+const shopWriter = new ExcelFileHandler("media/xlsx/shop_details.xlsx");
 const websiteCache = new Map();
 
-async function main() {
-  // Initalize spinner instance
-  const spinner = ora();
+// Initialize spinner instance
+const spinner = ora();
 
+async function main() {
   try {
     spinner.start("Searching for shops...");
     const shops = await fetchShops();
@@ -53,10 +46,10 @@ async function main() {
  * @returns {Promise<object[]>} A list of local shops, or an empty array if none found.
  */
 async function fetchShops() {
-  const cacheFile = "./assets/exampleFiles/shops.json"; // TODO: Allow user to pass this in
+  const cacheFile = "./assets/example_files/shops.json"; // TODO: Allow user to pass this in
   const meta = {
     query: process.env.SEARCH_QUERY,
-    coordinates: process.env.SEARCH_COORDINATES,
+    coordinates: `${process.env.SEARCH_LAT},${process.env.SEARCH_LONG}`,
   };
 
   const cached = await loadCachedShops(cacheFile, meta);
@@ -83,11 +76,7 @@ async function fetchShops() {
 
   // TODO: Export this to a user so they can import it as their cache file later
   if (results.length > 0) {
-    await fs.writeFile(
-      cacheFile,
-      JSON.stringify({ meta, results }, null, 2),
-      "utf-8"
-    );
+    await fs.writeFile(cacheFile, JSON.stringify({ meta, results }, null, 2), "utf-8");
   }
 
   return results;
@@ -103,12 +92,11 @@ async function fetchShops() {
  * @returns {Promise<Array<object>>} - A list of detail objects (one per shop), with fallback values on failure.
  */
 async function getDetails(shops) {
-  const total = shops.length;
-  const results = new Array(total);
+  const results = new Array(shops.length);
   let completed = 0;
 
-  const messageTemplate = (done) => `Scraping shops (${done}/${total})`;
-  const spinner = ora(messageTemplate(completed)).start();
+  const messageTemplate = (done) => `Scraping shops (${done}/${shops.length})`;
+  spinner.start(messageTemplate(completed));
 
   await PromisePool.withConcurrency(parseInt(process.env.CONCURRENCY, 10) || 5)
     .for(shops)
@@ -166,7 +154,7 @@ async function scrapeWebsite(page, url) {
         socialMedia: await page.getSocialMedia(),
       };
     }
-  } catch (err) {
+  } catch {
     details = FALLBACK_DETAILS.TIMEOUT;
   }
 

@@ -4,7 +4,6 @@ This repository contains voluntary work done for **[Rescue River](https://rescue
 
 - ✅ Shop Scraper (fully functional)
 - ⚠️ Fishing Report Scraper (in progress)
-- 🛑 Site comparison tool (not-started)
 
 These tools gather and summarize data from fishing-related sources online.  
 They support local and Docker-based development with flexible configuration.

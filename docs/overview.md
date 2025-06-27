@@ -30,17 +30,11 @@ Pulls business data using SerpAPI and associated websites, compiling the results
 
 ## 📈 Report Scraper (In-Progress)
 
-Analyzes fishing reports from websites. Uses a CSV with these headers:
-
-- `URL`
-- `Last Updated`
-- `Selector`
-- `Keywords`
-- `Junk Words`
-- `Click Phrases`
+Parses and summarizes fishing reports from shop websites. Takes an [Excel config file](../assets/example_files/report_scraper_ex.xlsx) that defines how to extract report content (selectors, keywords, etc.) for each site — _see example file_.
 
 ### 🧠 Intended Features
 
+- Identify and append missing report URLs from site data to the report file
 - Detect and summarize river conditions and activity from fishing reports
 - Filter by river name
 - Track report freshness based on publication dates

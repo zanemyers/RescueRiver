@@ -1,0 +1,49 @@
+https://bigskyanglers.com/ ✅ - article
+http://arricks.com/ ✅ - article
+http://henrysforkanglers.com/ ✅ - article
+http://slideinn.com/ ✅ - article
+https://thetackleshop.com/ ✅ - article
+http://hatchfinders.com/ ✅ - article
+https://snakeriverangler.com/ ✅ - article
+http://worldcastanglers.com/ ✅ - article
+http://montanaangler.com/ ✅ - article
+http://snakeriverangler.com/ ✅ - article
+https://danbaileys.com/ ✅ - article
+https://bozemanflyfishing.com/ ✅ - article
+http://frontieranglers.com/ ✅ - article
+http://flyfishfood.com/ ✅ - article
+https://bighornangler.com/ ✅ - article
+https://4riversmontana.com/ ✅ - article 
+http://trroutfitters.com/ ✅ - article
+http://montanafishman.com/ ✅ - div.article
+https://beartoothflyfishing.com/ ✅ - div.post
+http://sweetcastangler.com/ ✅ - div.post
+http://sweetwaterflyshop.com/ ✅ - div.post
+https://northforkanglers.com/ ✅ - div.user-items-list
+http://snakeriverfly.com/ ✅ - div.main-sidebar
+https://yellowdogflyfishing.com/yellow-dog-fly-shop ✅ - div.reportContent
+http://blackfootriver.com/ ✅ - div.full-report
+http://parksflyshop.com/ ✅ - div.entry-content
+http://yellowstoneangler.com/ ✅ - div.gecko-page__content 
+http://montanatrout.com/ ✅ - main.page-blocks
+http://sunriseflyshop.com/ ✅ - ul.wp-block-latest-posts__list
+http://bozemanflysupply.com/ ✅ - div._1140-w-wrapper:has(h1:has-text("fishing report"))
+https://theriversedge.com/ ✅ - div.container:has(h2:has-text("river fishing report"))
+http://troutfitters.com/ ✅ - div.mb-5:has(h2:has-text("Fly Pattern Suggestions"))
+http://madisonriveroutfitters.com/ ✅ - div.container.main.content
+https://thestonefly.com/ ✅ - div#main-content
+http://westbankanglers.com/ ✅ - main.main-content
+http://mrfc.com/ ✅ - main.main-content
+
+https://cutthroatflyshop.com/ ❌ - NO REPORTS 🤦‍♂️
+https://tlapcflyshop.com/ ❌ - NO REPORTS 🤦‍♂️
+https://montanaflyfishing.com/ ❌ - DOES NOT LOAD
+https://montanaflyfishers.com/ ❌ - DOES NOT LOAD
+https://stores.sportsmans.com/sportsmans-warehouse/us/mt/bozeman/2214-tschache-lane ❌ - BLOCKED
+
+
+
+
+
+
+

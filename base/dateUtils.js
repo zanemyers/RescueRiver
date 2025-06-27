@@ -43,7 +43,7 @@ function getUTCTimeStamp(date) {
  * @param {string} text - The text to search for date expressions.
  * @returns {Date|null} The most recent valid Date object, or null if none found.
  */
-function extractMostRecentDate(text) {
+function extractDate(text) {
   const currentYear = new Date().getFullYear();
 
   // Parse all date expressions using chrono-node
@@ -62,4 +62,4 @@ function extractMostRecentDate(text) {
   return validDates[0] || null;
 }
 
-export { extractMostRecentDate, getUTCTimeStamp, getUTCYearMonth };
+export { extractDate, getUTCTimeStamp, getUTCYearMonth };
