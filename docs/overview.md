@@ -30,7 +30,7 @@ Pulls business data using SerpAPI and associated websites, compiling the results
 
 ## 📈 Report Scraper (In-Progress)
 
-Parses and summarizes fishing reports from shop websites. Takes an [Excel config file](../assets/example_files/report_scraper_ex.xlsx) that defines how to extract report content (selectors, keywords, etc.) for each site — _see example file_.
+Parses and summarizes fishing reports from shop websites. Takes an [Excel config file](../example_files/report_scraper_ex.xlsx) that defines how to extract report content (selectors, keywords, etc.) for each site — _see example file_.
 
 ### 🧠 Intended Features
 

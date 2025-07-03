@@ -1,6 +1,5 @@
 import "dotenv/config";
 import fs from "fs/promises";
-import ora from "ora";
 import { getJson } from "serpapi";
 import { PromisePool } from "@supercharge/promise-pool";
 
@@ -16,24 +15,57 @@ const browser = new StealthBrowser({
 const shopWriter = new ExcelFileHandler("media/xlsx/shop_details.xlsx");
 const websiteCache = new Map();
 
-// Initialize spinner instance
-const spinner = ora();
+// Initialize global variables
+let serpKey = "";
+let searchQuery = "";
+let searchCoordinates = "";
+let max = 0;
 
-async function main() {
+/**
+ *
+ * @param apiKey
+ * @param query
+ * @param lat
+ * @param lng
+ * @param maxResults
+ * @param progressUpdate
+ * @returns {Promise<void>}
+ */
+export async function shopScraper({
+  apiKey,
+  query,
+  lat,
+  lng,
+  maxResults,
+  progressUpdate = () => {},
+}) {
+  // set global variables
+  serpKey = apiKey;
+  searchQuery = query;
+  searchCoordinates = `${lat},${lng}`;
+  max = parseInt(maxResults, 10) || 100;
+
   try {
-    spinner.start("Searching for shops...");
+    progressUpdate(
+      `🔑 API Key: ${apiKey}\n` +
+        `🔍 Query: ${query}\n` +
+        `📍 Location: ${lat}, ${lng}\n` +
+        `🔢 Max Results: ${maxResults}\n`
+    );
+
+    progressUpdate("Searching for shops...");
     const shops = await fetchShops();
-    spinner.succeed(`Found ${shops.length} shops.`);
+    progressUpdate(`[STATUS]✅ Found ${shops.length} shops.`);
 
     await browser.launch();
-    const shopDetails = await getDetails(shops);
+    const shopDetails = await getDetails(shops, progressUpdate);
     const rows = buildShopRows(shops, shopDetails);
 
-    spinner.start(`Writing shop data to Excel...`);
+    progressUpdate("📝 Writing shop data to Excel...");
     shopWriter.write(rows);
-    spinner.succeed("Finished!\n");
+    progressUpdate("[STATUS]✅ Excel file created.");
   } catch (err) {
-    spinner.fail(`Error: ${err}`);
+    progressUpdate(`❌ Error: ${err.message || err}`);
   } finally {
     await browser.close();
   }
@@ -46,16 +78,15 @@ async function main() {
  * @returns {Promise<object[]>} A list of local shops, or an empty array if none found.
  */
 async function fetchShops() {
-  const cacheFile = "./assets/example_files/shops.json"; // TODO: Allow user to pass this in
+  const cacheFile = "./example_files/shops.json"; // TODO: Allow user to pass this in
   const meta = {
-    query: process.env.SEARCH_QUERY,
-    coordinates: `${process.env.SEARCH_LAT},${process.env.SEARCH_LONG}`,
+    query: searchQuery,
+    coordinates: searchCoordinates,
   };
 
   const cached = await loadCachedShops(cacheFile, meta);
   if (cached) return cached;
 
-  const max = parseInt(process.env.MAX_RESULTS, 10) || 100;
   const results = [];
 
   for (let start = 0; start < max; start += 20) {
@@ -89,14 +120,15 @@ async function fetchShops() {
  * system resources or triggering anti-bot protections. Shops without websites are skipped.
  *
  * @param {Array<object>} shops - The list of shops to scrape extra details from.
+ * @param progressUpdate
  * @returns {Promise<Array<object>>} - A list of detail objects (one per shop), with fallback values on failure.
  */
-async function getDetails(shops) {
+async function getDetails(shops, progressUpdate = () => {}) {
   const results = new Array(shops.length);
   let completed = 0;
 
   const messageTemplate = (done) => `Scraping shops (${done}/${shops.length})`;
-  spinner.start(messageTemplate(completed));
+  progressUpdate(messageTemplate(completed));
 
   await PromisePool.withConcurrency(parseInt(process.env.CONCURRENCY, 10) || 5)
     .for(shops)
@@ -115,10 +147,11 @@ async function getDetails(shops) {
         }
       }
 
-      spinner.text = messageTemplate(++completed);
+      ++completed;
+      progressUpdate("[STATUS]" + messageTemplate(completed));
     });
 
-  spinner.succeed(`Scraping Complete`);
+  progressUpdate("[STATUS]Scraping Complete");
 
   return results;
 }
@@ -162,7 +195,3 @@ async function scrapeWebsite(page, url) {
   websiteCache.set(normalizedUrl, details);
   return details;
 }
-
-main().catch((err) => {
-  console.error("Fatal error:", err);
-});

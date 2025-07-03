@@ -21,6 +21,7 @@ export default defineConfig([
     },
     rules: {
       "prettier/prettier": "error",
+      "no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
     },
   },
 ]);

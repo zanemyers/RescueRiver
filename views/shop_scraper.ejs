@@ -1,0 +1,120 @@
+<main class="container py-5">
+    <div class="row d-flex align-items-stretch">
+        <!-- Instructions -->
+        <div class="col-lg-5 mb-4 mb-lg-0 d-flex">
+            <div class="p-4 bg-light border rounded flex-fill d-flex flex-column">
+                <h2 class="h4 mb-2">🛠️ What This Tool Does</h2>
+                <p class="mb-4">
+                    Use this form to search for nearby businesses using <strong>SerpAPI</strong> and Google Maps.
+                    Perfect for finding specialty shops like fly fishing stores near a location.
+                </p>
+
+                <h3 class="h5 mb-2">📋 How to Use It</h3>
+                <div class="steps">
+                    <div><span class="icon">🔐</span> Enter your <strong>SerpAPI key</strong> (get one at <a href="https://serpapi.com" target="_blank">serpapi.com</a>).</div>
+                    <div><span class="icon">🔎</span> Choose a <strong>search term</strong> like "Fly Fishing Shops".</div>
+                    <div><span class="icon">📍</span> Select a location or enter a <strong>latitude</strong> and <strong>longitude</strong> to center your search.</div>
+                    <div><span class="icon">✅</span> Click <strong>Run Search</strong> to begin.</div>
+                </div>
+
+                <h3 class="h5 mb-2">ℹ️ About the Defaults</h3>
+                <p class="mb-2">
+                    The default search is for <strong>Fly Fishing Shops</strong> centered near <strong>Yellowstone National Park</strong>, retrieving the first <strong>100</strong>     results. You can change these to search anywhere.
+                </p>
+
+                <p class="text-muted small mb-0">
+                    🔒 <strong>Privacy Notice:</strong> Your API key and search inputs are never stored or logged. Everything runs securely and locally in memory.
+                </p>
+            </div>
+        </div>
+
+        <!-- Form -->
+        <div id="formContainer" class="col-lg-7 d-flex">
+            <form id="searchForm" enctype="multipart/form-data" class="p-4 border rounded bg-white shadow-sm flex-fill d-flex flex-column">
+                <div class="form-body">
+                    <ul class="nav nav-tabs mb-3" id="inputTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="manual-tab" data-bs-toggle="tab" data-bs-target="#manualInputs" type="button" role="tab" aria-controls="manualInputs" aria-selected="true">Manual Input</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="file-tab" data-bs-toggle="tab" data-bs-target="#fileInput" type="button" role="tab" aria-controls="fileInput" aria-selected="false">File Upload</button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content">
+                        <div class="tab-pane show active" id="manualInputs" role="tabpanel" aria-labelledby="manual-tab">
+                            <div class="mb-3">
+                                <label for="apiKey" class="form-label">SerpAPI Key</label>
+                                <input type="password" class="form-control" id="apiKey" name="apiKey" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="query" class="form-label">Search Term</label>
+                                <input type="text" class="form-control" id="query" name="query" value="Fly Fishing Shops" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Location</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="latitude" title="Latitude (min: -90, max: 90)" name="latitude" step="0.000001" min="-90" max="90" value="44.427963" placeholder="Latitude" />
+                                    <input type="number" class="form-control" id="longitude" title="Longitude (min: -180, max: 180)" name="longitude" step="0.000001" min="-180" max="180" value="-110.588455" placeholder="Longitude" />
+                                    <button type="button" class="location-picker" title="Select a location" data-bs-placement="top" data-bs-toggle="modal" data-bs-target="#mapModal">
+                                        <img src="/static/image/location_pin.png" alt="Location Pin" style="height: 1em;" />
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="maxResults" class="form-label">Max Results</label>
+                                <input type="number" class="form-control" id="maxResults" title="Results come in increments of 20 (min: 20, max: 120)" name="maxResults" step="20" min="20" max="120" value="100" placeholder="e.g. 100" />
+                            </div>
+                        </div>
+
+                        <div class="tab-pane" id="fileInput" role="tabpanel" aria-labelledby="file-tab">
+                            <div class="alert alert-warning text-center mb-3 rounded-2" role="alert">
+                                <strong>🚧 Coming Soon:</strong> File upload support will be available in a future update.
+                            </div>
+                            <div class="mb-3">
+<!--                                <label for="inputFile" class="form-label">Import Excel File</label>-->
+                                <div class="border rounded bg-light text-center py-5" style="cursor: pointer" onclick="document.getElementById('inputFile').click()">
+                                    <img src="/static/image/folder_icon.png" alt="Folder Icon" class="mb-2" style="height: 3em; filter: invert(25%) opacity(0.5);" />
+                                    <p class="mb-2">Drag & Drop or Click to Select File</p>
+                                    <p class="text-muted small">Only .xls and .xlsx files are accepted.</p>
+                                </div>
+                                <input class="form-control d-none" type="file" id="inputFile" name="inputFile" accept=".xls,.xlsx" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 mt-auto">Run Search</button>
+            </form>
+
+
+        </div>
+    </div>
+</main>
+
+<!-- Map Modal -->
+<div class="modal fade" id="mapModal" tabindex="-1" aria-labelledby="mapModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="mapModalLabel">Select a Location</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="map" style="height: 500px; width: 100%; border-radius: 0 0 0.5rem 0.5rem;"></div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!--Handle form -->
+<script src="/static/js/shopScraper.js" type="text/javascript"></script>
+
+<!--Create and Handle leaflet map for selecting coordinates-->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="/static/js/map.js" type="text/javascript"></script>
