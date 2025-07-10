@@ -1,0 +1,62 @@
+<form id="shopForm" enctype="multipart/form-data" class="p-4 border rounded bg-white shadow-sm flex-fill d-flex flex-column">
+    <div id="formError"></div>
+    <div class="form-body">
+        <ul class="nav nav-tabs mb-3" id="inputTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="manual-tab" data-bs-toggle="tab" data-bs-target="#manualInputs" type="button" role="tab" aria-controls="manualInputs" aria-selected="true">Manual Input</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="file-tab" data-bs-toggle="tab" data-bs-target="#fileInput" type="button" role="tab" aria-controls="fileInput" aria-selected="false">File Upload</button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <div class="tab-pane show active" id="manualInputs" role="tabpanel" aria-labelledby="manual-tab">
+                <div class="mb-3">
+                    <label for="apiKey" class="form-label">SerpAPI Key</label>
+                    <input type="password" class="form-control" id="apiKey" name="apiKey" />
+                </div>
+
+                <div class="mb-3">
+                    <label for="query" class="form-label">Search Term</label>
+                    <input type="text" class="form-control" id="query" name="query" value="Fly Fishing Shops" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Location</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" id="latitude" title="Latitude (min: -90, max: 90)" name="latitude" step="0.000001" min="-90" max="90" value="44.427963" placeholder="Latitude" />
+                        <input type="number" class="form-control" id="longitude" title="Longitude (min: -180, max: 180)" name="longitude" step="0.000001" min="-180" max="180" value="-110.588455" placeholder="Longitude" />
+                        <button type="button" class="location-picker" title="Select a location" data-bs-placement="top" data-bs-toggle="modal" data-bs-target="#mapModal">
+                            <img src="/static/image/location_pin.png" alt="Location Pin" style="height: 1em;" />
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="maxResults" class="form-label">Max Results</label>
+                    <input type="number" class="form-control" id="maxResults" title="Results come in increments of 20 (min: 20, max: 120)" name="maxResults" step="20" min="20" max="120" value="100" placeholder="e.g. 100" />
+                </div>
+            </div>
+
+            <div class="tab-pane" id="fileInput" role="tabpanel" aria-labelledby="file-tab">
+                <div class="alert alert-warning text-center mb-3 rounded-2" role="alert">
+                    <strong>🚧 Coming Soon:</strong> File upload support will be available in a future update.
+                </div>
+                <div class="mb-3">
+                    <!--                                <label for="inputFile" class="form-label">Import Excel File</label>-->
+                    <div class="border rounded bg-light text-center py-5" style="cursor: pointer" onclick="document.getElementById('inputFile').click()">
+                        <img src="/static/image/folder_icon.png" alt="Folder Icon" class="mb-2" style="height: 3em; filter: invert(25%) opacity(0.5);" />
+                        <p class="mb-2">Drag & Drop or Click to Select File</p>
+                        <p class="text-muted small">Only .xls and .xlsx files are accepted.</p>
+                    </div>
+                    <input class="form-control d-none" type="file" id="inputFile" name="inputFile" accept=".xls,.xlsx" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100 mt-auto">Run Search</button>
+</form>
+
+<script src="/static/js/shopFormApp.js" type="module"></script>

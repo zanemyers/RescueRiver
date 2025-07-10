@@ -33,8 +33,8 @@ All notable changes to this project will be documented in this file.
 
 - Renamed `ShopScraper` & `ReportScraper` to `shop_scraper` & `report_scraper`
 - `.env` updates:
-    - `SEARCH_COORDINATES` split into `SEARCH_LAT` & `SEARCH_LONG`
-    - `GOOGLE_GENAI_API_KEY` & `GOOGLE_GENAI_MODEL` renamed to `GEMINI_API_KEY` & `GEMINI_MODEL`
+  - `SEARCH_COORDINATES` split into `SEARCH_LAT` & `SEARCH_LONG`
+  - `GOOGLE_GENAI_API_KEY` & `GOOGLE_GENAI_MODEL` renamed to `GEMINI_API_KEY` & `GEMINI_MODEL`
 - `setup.js` updated for new `.env` keys
 - Report scraper now reads sites from Excel instead of JSON
 - Summary generation skipped if no reports found
@@ -55,7 +55,6 @@ All notable changes to this project will be documented in this file.
 
 - `isSameDomain` from `reportUtils` (replaced by `sameDomain` in `scrapingUtils`)
 - Site comparison tool section from README (now part of report scraper)
-
 
 ### [v2.2](https://github.com/zanemyers/RescueRiver/compare/v2.1...v2.2)
 

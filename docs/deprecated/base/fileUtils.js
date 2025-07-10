@@ -1,4 +1,90 @@
 /**
+ * Base class for handling files
+ * It provides methods to archive existing files and ensuring a directory exists.
+ */
+class FileHandler {
+  /**
+   * @param {string} filePath - The path to the file.
+   * @param {string} fileType - Type of file (e.g., 'csv', 'txt').
+   */
+  constructor(filePath, fileType) {
+    this.filePath = path.resolve(projectDir, filePath);
+    this.fileType = fileType;
+
+    // Ensure the directory exists
+    this.checkDirPath();
+  }
+
+  /**
+   * Ensures that the directory for the file exists before writing.
+   * If the directory doesn't exist, it is created recursively.
+   */
+  checkDirPath() {
+    try {
+      // Get the directory path of the file from its full file path
+      const dirPath = path.dirname(this.filePath);
+
+      // If the directory doesn't exist, create it recursively
+      if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, { recursive: true });
+      }
+    } catch (error) {
+      // Log any errors that occur during directory creation
+      console.error("Error creating directory:", error);
+      // Re-throw the error to propagate it further
+      throw error;
+    }
+  }
+
+  /**
+   * Archives the current file by moving it to an archive folder with a timestamped filename.
+   */
+  archiveFile() {
+    try {
+      // Get the file's stats to retrieve the creation date
+      const stats = fs.statSync(this.filePath);
+      const createdDate = stats.birthtime;
+
+      // Get the UTC timestamp and year/month from the file's creation date
+      const timestamp = getUTCTimeStamp(createdDate);
+      const [year, month] = getUTCYearMonth(createdDate);
+
+      const archiveFolder = path.basename(this.filePath, `.${this.fileType}`);
+      // Define the archive directory path based on year and month
+      const archiveDir = path.join(
+          projectDir,
+          "media",
+          this.fileType,
+          archiveFolder,
+          `${year}`,
+          `${month}`
+      );
+
+      // Create the archive directory structure recursively if it doesn't exist
+      fs.mkdirSync(archiveDir, { recursive: true });
+
+      // Get the base file name without the extension
+      const baseName = path.basename(this.filePath, `.${this.fileType}`);
+
+      // Construct the full path for the archived file, including the timestamp
+      const archivedFile = path.join(archiveDir, `${baseName}_${timestamp}.${this.fileType}`);
+
+      // Rename the original file to the archived file path
+      fs.renameSync(this.filePath, archivedFile);
+    } catch (err) {
+      // Log any errors that occur during file archiving
+      console.error("Error archiving file:", err);
+      // Re-throw the error to propagate it further
+      throw err;
+    }
+  }
+
+  write(archive = true) {
+    if (archive && fs.existsSync(this.filePath)) this.archiveFile();
+  }
+}
+
+/**
  * Utility class to write data to a CSV file
  * extends the FileWriter class.
  */
