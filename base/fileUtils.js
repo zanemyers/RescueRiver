@@ -1,157 +1,83 @@
 /**
- * Utility classes to handle file writing and reading.
- * It provides methods for CSV and TXT file writing and reading.
- * The CSVFileWriter class ensures that the output directory exists and archives existing files with timestamps.
- * The CSVFileReader class allows filtering and transforming rows while reading.
- * The TXTFileWriter class provides a simple way to write data to a text file.
+ * Utility classes for in-memory file reading and writing.
+ *
+ * This module provides lightweight handlers for TXT and Excel (XLSX) file operations
+ * without any need for disk storage. All file content is kept entirely in memory.
+ *
+ * - TXTFileHandler: Supports reading and writing plain text content with optional appending.
+ * - ExcelFileHandler: Supports reading, writing (with optional appending), and exporting
+ *   Excel files as ArrayBuffers or Buffers for download or transmission.
+ *
+ * These classes are useful for scenarios where temporary file handling is needed,
+ * such as generating files for immediate download, API responses, or processing without saving to disk.
  */
 
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-// import { parse } from "@fast-csv/parse";
-// import { writeToPath } from "@fast-csv/format";
-import { writeFile } from "fs/promises";
 import ExcelJS from "exceljs";
 
-import { getUTCTimeStamp, getUTCYearMonth } from "./dateUtils.js";
-
-// Get the directory name of the current module
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-// Resolve the project directory path
-const projectDir = path.resolve(__dirname, "..");
-
 /**
- * Base class for handling files
- * It provides methods to archive existing files and ensuring a directory exists.
+ * In-memory TXT file handler.
+ *
+ * Provides simple read and write operations for plain text content held entirely in memory.
+ * Useful for temporary file generation, downloads, or data processing without disk I/O.
  */
-class FileHandler {
-  /**
-   * @param {string} filePath - The path to the file.
-   * @param {string} fileType - Type of file (e.g., 'csv', 'txt').
-   */
-  constructor(filePath, fileType) {
-    this.filePath = path.resolve(projectDir, filePath);
-    this.fileType = fileType;
-
-    // Ensure the directory exists
-    this.checkDirPath();
-  }
-
-  /**
-   * Ensures that the directory for the file exists before writing.
-   * If the directory doesn't exist, it is created recursively.
-   */
-  checkDirPath() {
-    try {
-      // Get the directory path of the file from its full file path
-      const dirPath = path.dirname(this.filePath);
-
-      // If the directory doesn't exist, create it recursively
-      if (!fs.existsSync(dirPath)) {
-        fs.mkdirSync(dirPath, { recursive: true });
-      }
-    } catch (error) {
-      // Log any errors that occur during directory creation
-      console.error("Error creating directory:", error);
-      // Re-throw the error to propagate it further
-      throw error;
-    }
-  }
-
-  /**
-   * Archives the current file by moving it to an archive folder with a timestamped filename.
-   */
-  archiveFile() {
-    try {
-      // Get the file's stats to retrieve the creation date
-      const stats = fs.statSync(this.filePath);
-      const createdDate = stats.birthtime;
-
-      // Get the UTC timestamp and year/month from the file's creation date
-      const timestamp = getUTCTimeStamp(createdDate);
-      const [year, month] = getUTCYearMonth(createdDate);
-
-      const archiveFolder = path.basename(this.filePath, `.${this.fileType}`);
-      // Define the archive directory path based on year and month
-      const archiveDir = path.join(
-        projectDir,
-        "media",
-        this.fileType,
-        archiveFolder,
-        `${year}`,
-        `${month}`
-      );
-
-      // Create the archive directory structure recursively if it doesn't exist
-      fs.mkdirSync(archiveDir, { recursive: true });
-
-      // Get the base file name without the extension
-      const baseName = path.basename(this.filePath, `.${this.fileType}`);
-
-      // Construct the full path for the archived file, including the timestamp
-      const archivedFile = path.join(archiveDir, `${baseName}_${timestamp}.${this.fileType}`);
-
-      // Rename the original file to the archived file path
-      fs.renameSync(this.filePath, archivedFile);
-    } catch (err) {
-      // Log any errors that occur during file archiving
-      console.error("Error archiving file:", err);
-      // Re-throw the error to propagate it further
-      throw err;
-    }
-  }
-
-  write(archive = true) {
-    if (archive && fs.existsSync(this.filePath)) this.archiveFile();
-  }
-}
-
-/**
- * Utility class to write data to a TXT file.
- * Ensures the output directory exists and archives existing files with timestamps.
- */
-class TXTFileHandler extends FileHandler {
-  /**
-   * @param {string} filePath - Path to the TXT file to write to.
-   */
-  constructor(filePath) {
-    super(filePath, "txt"); // Call the parent constructor with fileType as "txt"
+class TXTFileHandler {
+  constructor() {
+    this.content = "";
   }
 
   /**
    * Reads data from the TXT file
    */
-  async read() {
-    return fs.readFileSync(this.filePath, "utf-8");
+  read() {
+    return this.content;
   }
 
   /**
-   * Writes data to the TXT file.
+   * Writes data to the TXT file (in memory).
+   * If append is true, it appends the new data to the existing content.
+   *
+   * @param {string} data - The text data to write.
+   * @param {boolean} append - Whether to append to existing content (default: true).
    */
-  async write(data, archive = true) {
-    // Call archiving logic from base class
-    super.write(archive);
+  async write(data, append = true) {
+    this.content = append ? this.content + data : data;
+  }
 
-    try {
-      await writeFile(this.filePath, data, "utf8");
-    } catch (error) {
-      console.error("Error writing file:", error);
-      throw error;
-    }
+  /**
+   * Returns the current content as a UTF-8 Buffer.
+   * @returns {Buffer}
+   */
+  getBuffer() {
+    return Buffer.from(this.content, "utf-8");
   }
 }
 
 /**
- * Excel file reader/writer built on top of FileHandler.
+ * Excel file reader/writer for in-memory use.
+ * Supports reading, writing, appending, and exporting as a Buffer.
  */
-class ExcelFileHandler extends FileHandler {
+class ExcelFileHandler {
+  constructor() {
+    this.initCleanFile();
+  }
+
   /**
-   * @param {string} filePath - Relative path to the Excel file.
+   * Initializes a new, clean in-memory workbook and worksheet.
+   * This method clears any existing data and prepares the handler for fresh writing.
    */
-  constructor(filePath) {
-    super(filePath, "xlsx"); // Call the parent constructor with file type set to 'xlsx'
-    this.workbook = new ExcelJS.Workbook(); // Initialize a new Excel workbook instance
+  initCleanFile() {
+    this.workbook = new ExcelJS.Workbook();
+    this.worksheet = this.workbook.addWorksheet("Sheet1");
+  }
+
+  /**
+   * Load an existing Excel file from an ArrayBuffer into memory.
+   * @param {ArrayBuffer|Buffer} buffer - The buffer containing the Excel file data.
+   */
+  async loadBuffer(buffer) {
+    await this.workbook.xlsx.load(buffer);
+    this.worksheet = this.workbook.worksheets[0] || this.worksheet;
+    return this;
   }
 
   /**
@@ -164,16 +90,8 @@ class ExcelFileHandler extends FileHandler {
    * @returns {Promise<Array<Object>>} JSON array of filtered/mapped rows.
    */
   async read(listCols = [], filter = () => true, rowMap = null) {
-    // Load the Excel file into the workbook
-    await this.workbook.xlsx.readFile(this.filePath);
-
-    // Get the first worksheet in the workbook
-    const worksheet = this.workbook.worksheets[0];
-
-    // Extract headers from the first row
-    const headerRow = worksheet.getRow(1);
-    const headers = headerRow.values.slice(1); // Skip empty cell at index 0
-
+    const worksheet = this.worksheet;
+    const headers = worksheet.getRow(1).values.slice(1); // Extract headers from the first row
     const data = [];
 
     worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
@@ -182,15 +100,16 @@ class ExcelFileHandler extends FileHandler {
       const rowData = {};
       headers.forEach((header, index) => {
         const cellValue = row.getCell(index + 1).value;
+        const newHeader = header.toLowerCase().replace(/\s+/g, "_");
 
         if (typeof cellValue === "string" && listCols.includes(header)) {
           // Split by comma and trim each item
-          rowData[header] = cellValue
+          rowData[newHeader] = cellValue
             .split(",")
             .map((s) => s.trim())
-            .filter(Boolean); // Remove empty strings
+            .filter(Boolean);
         } else {
-          rowData[header] = cellValue;
+          rowData[newHeader] = cellValue;
         }
       });
 
@@ -208,31 +127,38 @@ class ExcelFileHandler extends FileHandler {
    * Optionally archives the existing file before overwriting.
    *
    * @param {Array<Object>} data - Array of objects to write as rows
-   * @param {boolean} archive - Whether to archive the file or append data to the current file
+   * @param {boolean} append - Whether to append data to the current file
    */
-  async write(data, archive = true) {
+  async write(data, append = true) {
     if (!Array.isArray(data) || data.length === 0) {
       throw new Error("Data must be a non-empty array.");
     }
 
-    // Archive existing file if needed
-    await super.write(archive);
-
-    // Load workbook and get or create the first worksheet
-    await this.workbook.xlsx.readFile(this.filePath).catch(() => {});
-    const worksheet = this.workbook.worksheets[0] || this.workbook.addWorksheet();
-
     const headers = Object.keys(data[0]);
     if (headers.length === 0) throw new Error("Data objects must have at least one key.");
-    if (worksheet.rowCount === 0) worksheet.addRow(headers);
+
+    if (!append) {
+      // Reset workbook and worksheet
+      this.initCleanFile();
+      this.worksheet.addRow(headers);
+    } else if (this.worksheet.rowCount === 0) this.worksheet.addRow(headers);
 
     // Add data rows
     data.forEach((item) => {
       const row = headers.map((key) => item[key]);
-      worksheet.addRow(row);
+      this.worksheet.addRow(row);
     });
+  }
 
-    await this.workbook.xlsx.writeFile(this.filePath);
+  /**
+   * Returns a buffer of the current workbook in memory for downloading or transmission.
+   *
+   * NOTE: The workbook must be populated  beforehand, otherwise the buffer may be empty or invalid.
+   *
+   * @returns {Promise<Buffer>} A Promise that resolves to the Excel file buffer.
+   */
+  async getBuffer() {
+    return await this.workbook.xlsx.writeBuffer();
   }
 }
 

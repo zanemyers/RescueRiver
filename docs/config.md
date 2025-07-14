@@ -1,10 +1,9 @@
 ## ⚙️ Configuration
 
-Set these values in your `.env` file to control scraper behavior.
-
 ---
 
 ### 🛠️ Shared Settings
+> Set these values in your `.env` file to control scraper behavior.
 
 | Variable       | Description                                                               |
 | -------------- | ------------------------------------------------------------------------- |
@@ -14,6 +13,7 @@ Set these values in your `.env` file to control scraper behavior.
 ---
 
 ### 🛒 Shop Scraper
+> set these values in the webform
 
 | Variable        | Description                                                             |
 | --------------- | ----------------------------------------------------------------------- |
@@ -21,12 +21,12 @@ Set these values in your `.env` file to control scraper behavior.
 | `SEARCH_QUERY`  | Search term to use on Google Maps (e.g., `"Fly Fishing Shops"`)         |
 | `SEARCH_LAT`    | Latitude to center the search near (e.g., `44.4280`)                    |
 | `SEARCH_LONG`   | Longitude to center the search near (e.g., `-110.5885`)                 |
-| `SEARCH_RADIUS` | Radius in meters to search from the provided coordinates                |
 | `MAX_RESULTS`   | Maximum number of results to retrieve (must be a multiple of 20)        |
 
 ---
 
 ### 📈 Report Scraper
+> set these values in the webform
 
 | Variable           | Description                                                                                        |
 | ------------------ | -------------------------------------------------------------------------------------------------- |

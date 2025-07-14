@@ -1,0 +1,33 @@
+<label for="inputFile" class="form-label">Import Excel File</label>
+
+<div id="file-input-wrapper" class="border rounded bg-light text-center py-5" style="cursor: pointer;">
+    <img src="/static/image/upload.png" alt="Folder Icon" class="mb-2" style="height: 3em; filter: invert(25%) opacity(0.5);" />
+    <p class="mb-2">Drag & Drop or Click to Select File</p>
+
+    <div id="selectedFileWrapper" class="mb-2 fw-bold d-flex justify-content-center align-items-center gap-2 d-none">
+        <button
+                type="button"
+                id="clearFileButton"
+                class="btn btn-md btn-outline-danger px-2 py-0"
+                style="font-weight: bold; border-radius: 0.25rem;"
+                aria-label="Remove File"
+        >
+            &times;
+        </button>
+
+        <span id="selectedFile"></span>
+    </div>
+
+    <p class="text-muted small">Only .xls and .xlsx files are accepted.</p>
+</div>
+
+<input class="form-control d-none" type="file" id="inputFile" name="inputFile" accept=".xls,.xlsx" />
+
+
+
+<script src="/static/js/fileInput.js" type="module"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        initFileInput();
+    });
+</script>

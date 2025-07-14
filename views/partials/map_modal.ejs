@@ -1,0 +1,17 @@
+<div class="modal fade" id="mapModal" tabindex="-1" aria-labelledby="mapModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="mapModalLabel">Select a Location</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="map" style="height: 500px; width: 100%; border-radius: 0 0 0.5rem 0.5rem;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--Create and Handle leaflet map for selecting coordinates-->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="/static/js/map.js" type="module"></script>

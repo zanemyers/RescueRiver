@@ -202,6 +202,7 @@ function buildShopRows(shops, shopDetails) {
       Name: shop.title || "",
       Category: shop.type || "",
       Phone: shop.phone || "",
+      Address: shop.address || "",
       Email: shopDetails[i].email,
       "Has Website": !!shop.website,
       Website: shop.website || MESSAGES.NO_WEB,
@@ -214,4 +215,21 @@ function buildShopRows(shops, shopDetails) {
   });
 }
 
-export { addShopSelectors, buildShopRows, loadCachedShops };
+function buildCacheFileRows(shops) {
+  if (shops.length === 0) return [];
+
+  return shops.map((shop) => {
+    return {
+      Name: shop.title || "",
+      Category: shop.type || "",
+      Phone: shop.phone || "",
+      Address: shop.address || "",
+      "Has Website": !!shop.website,
+      Website: shop.website || MESSAGES.NO_WEB,
+      Rating: shop.rating != null ? `${shop.rating}/5` : "N/A",
+      Reviews: shop.reviews || 0,
+    };
+  });
+}
+
+export { addShopSelectors, buildCacheFileRows, buildShopRows, loadCachedShops };

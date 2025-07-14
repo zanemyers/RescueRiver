@@ -25,58 +25,6 @@ const questions = [
   },
   {
     type: "input",
-    name: "SERP_API_KEY",
-    message: "Enter your SerpAPI API Key:",
-    required: true,
-  },
-  {
-    type: "input",
-    name: "SEARCH_QUERY",
-    message: "Enter your search query:",
-    initial: "Fly Fishing Shops",
-    required: true,
-  },
-  {
-    type: "numeral",
-    name: "SEARCH_LAT",
-    message: "Enter latitude to search near by:",
-    float: true,
-    required: true,
-    initial: 44.428, // latitude for Yellowstone National Park
-    validate: validateRange(-90, 90, "Latitude"),
-  },
-  {
-    type: "numeral",
-    name: "SEARCH_LONG",
-    message: "Enter longitude to search near by:",
-    float: true,
-    required: true,
-    initial: -110.5885, // longitude for Yellowstone National Park
-    validate: validateRange(-180, 180, "Longitude"),
-  },
-  {
-    type: "numeral",
-    name: "SEARCH_RADIUS",
-    message: "Enter search radius (in meters):",
-    float: false,
-    initial: 50000,
-    validate: validateRange(10000, 50000, "Search Radius"),
-  },
-  {
-    type: "numeral",
-    name: "MAX_RESULTS",
-    message: "Enter the maximum number of results to return:",
-    float: false,
-    min: 20,
-    initial: 100,
-    validate(value) {
-      if (value < 20) return "Value must be at least 20.";
-      if (value % 20 !== 0) return "Value must be a multiple of 20.";
-      return true;
-    },
-  },
-  {
-    type: "input",
     name: "GEMINI_API_KEY",
     message: "Enter your Gemini API Key:",
     required: true,
@@ -161,13 +109,6 @@ function validateRange(min = 0, max = 100, label = "Value") {
       `# General Scraper configuration\n` +
       `RUN_HEADLESS=${answers.RUN_HEADLESS}\n` +
       `CONCURRENCY=${answers.CONCURRENCY}\n\n` +
-      `# Shop Scraper configuration\n` +
-      `SERP_API_KEY="${answers.SERP_API_KEY}"\n` +
-      `SEARCH_QUERY="${answers.SEARCH_QUERY}"\n` +
-      `SEARCH_LAT=${answers.SEARCH_LAT}\n` +
-      `SEARCH_LONG=${answers.SEARCH_LONG}\n` +
-      `SEARCH_RADIUS=${answers.SEARCH_RADIUS}\n` +
-      `MAX_RESULTS=${answers.MAX_RESULTS}\n\n` +
       `# Fishing Report configuration\n` +
       `GEMINI_API_KEY="${answers.GEMINI_API_KEY}"\n` +
       `GEMINI_MODEL="${answers.GEMINI_MODEL}"\n` +

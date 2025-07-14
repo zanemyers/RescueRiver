@@ -11,3 +11,6 @@ services:
     environment:
       - NODE_ENV=development
     working_dir: /app
+    ports:
+      - "3000:3000"
+      - "9229:9229"
