@@ -30,7 +30,7 @@ class ReportFormApp extends BaseFormApp {
   validateFormInput() {
     const apiKey = this.elements.apiKeyEl.value.trim();
     const maxAge = parseInt(this.elements.maxAgeEl.value, 10);
-    const filterRivers = this.elements.filterRiversEl.checked;
+    const filterByRivers = this.elements.filterRiversEl.checked;
     const riverList = this.elements.riverListEl.value.trim();
     const inputFile = this.elements.fileInputEl.files[0] || null;
     const model = this.elements.modelEl.value.trim();
@@ -42,7 +42,7 @@ class ReportFormApp extends BaseFormApp {
     const isValid =
       apiKey &&
       !isNaN(maxAge) &&
-      (!filterRivers || riverList !== "") &&
+      (!filterByRivers || riverList !== "") &&
       inputFile &&
       model &&
       !isNaN(crawlDepth) &&
@@ -54,7 +54,7 @@ class ReportFormApp extends BaseFormApp {
       ? {
           apiKey,
           maxAge,
-          filterRivers,
+          filterByRivers,
           riverList,
           inputFile,
           model,

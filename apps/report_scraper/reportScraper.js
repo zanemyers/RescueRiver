@@ -1,8 +1,8 @@
 import "dotenv/config";
-import ora from "ora";
 import { PromisePool } from "@supercharge/promise-pool";
+import { GoogleGenAI } from "@google/genai";
 
-import { MERGE_PROMPT, REPORT_DIVIDER, SUMMARY_PROMPT } from "../../constants/index.js";
+import { REPORT_DIVIDER } from "../../constants/index.js";
 import {
   ExcelFileHandler,
   normalizeUrl,
@@ -21,50 +21,59 @@ import {
   scrapeVisibleText,
 } from "./reportUtils.js";
 
-// Initialize spinner instance
-const spinner = ora();
-
-// Initialize .env variables
-const concurrency = Math.max(1, parseInt(process.env.CONCURRENCY, 10) || 5);
-const crawlDepth = Math.max(1, parseInt(process.env.CRAWL_DEPTH, 10) || 25);
-const runHeadless = process.env.RUN_HEADLESS !== "false";
-const debugging = process.env.DEBUGGING === "true";
-
-export async function reportScraper() {
+export async function reportScraper({
+  searchParams,
+  progressUpdate = () => {},
+  returnFile = () => {},
+  cancelToken = { throwIfCancelled: () => {} }, // default to no-op if not provided
+}) {
   try {
+    let sites;
+
     // STEP 1: Read and deduplicate site list
-    spinner.start("Reading Sites from file...");
+    progressUpdate("Reading Sites from file...");
 
-    // Initialize the excel file handler instance with a filepathf
-    const reader = new ExcelFileHandler("example_files/report_starter_file_ex.xlsx");
-
-    // Read the excel file into a JSON dict
-    const sites = await reader.read(
+    // Initialize the excel file handler instance with a filepath
+    const inputFileHandler = new ExcelFileHandler();
+    await inputFileHandler.loadBuffer(searchParams.fileBuffer);
+    sites = await inputFileHandler.read(
       ["keywords", "junk-words", "click-phrases"] // listCols
     );
 
     const siteList = await checkDuplicateSites(sites); // Filter out duplicates
-    spinner.succeed(`Found ${siteList.length} sites to scrape!`);
+    progressUpdate(`STATUS:✅ Found ${siteList.length} sites to scrape!`);
 
     // STEP 2: Scrape fishing reports from each site
-    const reports = await scrapeReports(siteList);
+    const reports = await scrapeReports(progressUpdate, siteList, searchParams.crawlDepth);
 
     // STEP 3: Filter and compile reports (if any found)
     if (reports.length > 0) {
-      spinner.start("Compiling reports...");
-      const filteredReports = filterReports(reports); // Filter out old reports
+      progressUpdate("Compiling reports...");
+      const filteredReports = filterReports(
+        reports,
+        searchParams.maxAge,
+        searchParams.filterByRivers,
+        searchParams.riverList
+      );
       const compiledReports = filteredReports.join(REPORT_DIVIDER); // Join with section divider
-      spinner.succeed("Compiling complete!");
+      progressUpdate("STATUS:✅ Compiling complete!");
 
       // STEP 4: Generate a summary using Gemini
-      spinner.start("Generating report summary...");
-      await generateSummary(compiledReports);
-      spinner.succeed("Finished!");
-    } else {
-      console.log("No reports found."); // Handle empty result set
+      progressUpdate("Generating report summary...");
+      progressUpdate(`DOWNLOAD:report_summary.txt`);
+      await generateSummary(
+        returnFile,
+        compiledReports,
+        searchParams.apiKey,
+        searchParams.model,
+        searchParams.summaryPrompt,
+        searchParams.mergePrompt,
+        searchParams.tokenLimit
+      );
+      progressUpdate("STATUS:✅ Finished!");
     }
   } catch (err) {
-    spinner.fail(`Error: ${err}`);
+    progressUpdate(`❌ Error: ${err.message || err}`);
   }
 }
 
@@ -74,12 +83,14 @@ export async function reportScraper() {
  * For each site, opens a new page in the browser, runs a prioritized crawl to extract
  * visible report-like text, and compiles all results into a flat array.
  *
+ * @param progressUpdate
  * @param {Array<Object>} sites - List of site objects to crawl.
+ * @param crawlDepth
  * @returns {Promise<{reports: *, failedDomains: *[]}>} - A list of reports and sites that failed to load
  */
-async function scrapeReports(sites) {
+async function scrapeReports(progressUpdate, sites, crawlDepth) {
   // Initialize the stealth browser (headless unless overridden by env)
-  const browser = new StealthBrowser({ headless: runHeadless });
+  const browser = new StealthBrowser({ headless: process.env.RUN_HEADLESS !== "false" });
   const failedDomains = [];
 
   try {
@@ -89,16 +100,18 @@ async function scrapeReports(sites) {
 
     const messageTemplate = (done) => `Scraping sites (${done}/${sites.length}) for reports...`;
 
-    spinner.start(messageTemplate(completed));
+    progressUpdate(messageTemplate(completed));
 
     // Run site scraping in parallel
-    const { results } = await PromisePool.withConcurrency(concurrency)
+    const { results } = await PromisePool.withConcurrency(
+      Math.max(1, parseInt(process.env.CONCURRENCY, 10) || 5)
+    )
       .for(sites)
       .process(async (site) => {
         const page = await browser.newPage(); // Open a new tab for the site
         try {
-          const { reports, pageErrors } = await findReports(page, site); // Crawl and collect reports
-          spinner.text = messageTemplate(++completed); // Update progress
+          const { reports, pageErrors } = await findReports(page, site, crawlDepth); // Crawl and collect reports
+          progressUpdate(messageTemplate(++completed)); // Update progress
           failedDomains.push(...pageErrors);
           return reports;
         } catch (error) {
@@ -112,11 +125,11 @@ async function scrapeReports(sites) {
     // Flatten all site results and remove empty entries
     const reports = results.flat().filter(Boolean);
 
-    spinner.succeed(`Found ${reports.length} total reports!`);
+    progressUpdate(`Found ${reports.length} total reports!`);
 
     return { reports, failedDomains };
   } catch (err) {
-    spinner.fail(`Error: ${err}`);
+    progressUpdate(`Error: ${err}`);
     return [];
   } finally {
     await browser.close(); // Ensure browser shuts down regardless of success/failure
@@ -132,9 +145,10 @@ async function scrapeReports(sites) {
  *
  * @param {Object} page - The Playwright page instance used for navigation.
  * @param {Object} site - An object representing the site to crawl. Includes `url` and optional `selector`.
+ * @param crawlDepth
  * @returns {Promise<{ reports: string[], pageErrors: string[] }>} - A list of reports and siteFailures
  */
-async function findReports(page, site) {
+async function findReports(page, site, crawlDepth) {
   const visited = new Set(); // Tracks URLs that have already been visited
   const toVisit = [{ url: site.url, priority: -1 }]; // URLs queued for crawling
   const reports = []; // Collected report texts
@@ -188,7 +202,7 @@ async function findReports(page, site) {
   }
 
   // Debug output for optimization
-  if (debugging) {
+  if (process.env.DEBUGGING === "true") {
     if (visited.size >= crawlDepth) {
       console.log(`Reached crawl depth limit for the site.`);
     }
@@ -205,20 +219,38 @@ async function findReports(page, site) {
  * This function takes a string, splits it into bite size chunks, then
  * summarizes each chunk in parallel and writes the output to a text file,
  *
+ * @param returnFile
  * @param {string} report - The full text content of the compiled reports.
+ * @param apiKey
+ * @param summaryPrompt
+ * @param mergePrompt
+ * @param tokenLimit
  */
-async function generateSummary(report) {
+async function generateSummary(
+  returnFile,
+  report,
+  apiKey,
+  model,
+  summaryPrompt,
+  mergePrompt,
+  tokenLimit
+) {
+  // Initialize the Google GenAI client with your API key
+  const ai = new GoogleGenAI({ apiKey: apiKey });
+
   try {
     const summaryWriter = new TXTFileHandler("media/txt/report_summary.txt");
 
     // Split the compiled report into smaller chunks (based on token limits)
-    const chunks = chunkReportText(report);
+    const chunks = chunkReportText(report, tokenLimit);
 
     // Use PromisePool to summarize each chunk concurrently
-    const { results, errors } = await PromisePool.withConcurrency(concurrency)
+    const { results, errors } = await PromisePool.withConcurrency(
+      Math.max(1, parseInt(process.env.CONCURRENCY, 10) || 5)
+    )
       .for(chunks)
       .process(async (chunk) => {
-        return await generateContent(`${chunk}\n\n${SUMMARY_PROMPT}`);
+        return await generateContent(ai, model, `${chunk}\n\n${summaryPrompt}`);
       });
 
     // Log any failed chunk summaries
@@ -233,10 +265,16 @@ async function generateSummary(report) {
     }
 
     // Merge the individual summaries into a final summary
-    const finalResponse = await generateContent(`${MERGE_PROMPT}\n\n${results.join("\n\n")}`);
+    const finalResponse = await generateContent(
+      ai,
+      model,
+      `${mergePrompt}\n\n${results.join("\n\n")}`
+    );
 
     // Write the final summary to the output file
     await summaryWriter.write(finalResponse);
+    // Send the file to the frontend
+    returnFile(summaryWriter.getBuffer());
   } catch (err) {
     console.error("Error generating summary:", err);
   }

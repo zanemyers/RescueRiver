@@ -1,20 +1,7 @@
 import { differenceInDays } from "date-fns";
-import { GoogleGenAI } from "@google/genai";
 
 import { REPORT_DIVIDER } from "../../constants/index.js";
 import { extractDate, normalizeUrl } from "../../utils/index.js";
-
-// Initialize .env variables
-const ageLimit = Math.max(1, parseInt(process.env.MAX_REPORT_AGE, 10) || 30);
-const filterByRiver = process.env.FILTER_BY_RIVER === "true";
-const importantRivers = JSON.parse(process.env.IMPORTANT_RIVERS ?? "[]") || [];
-const tokenLimit = Math.max(100, parseInt(process.env.TOKEN_LIMIT, 10) || 5000);
-const aiKey = process.env.GEMINI_API_KEY;
-const aiModel = process.env.GEMINI_MODEL;
-
-if (!aiKey || !aiModel) {
-  throw new Error("Missing GEMINI_API_KEY or GEMINI_MODEL in .env file");
-}
 
 /**
  * Normalize URLs for each site and remove duplicates based on normalized URLs.
@@ -29,7 +16,7 @@ async function checkDuplicateSites(sites) {
   const siteList = []; // Array to accumulate unique sites with normalized URLs
 
   for (const site of sites) {
-    const url = await normalizeUrl(site.url);
+    const url = normalizeUrl(site.url);
 
     if (!urlsSet.has(url)) {
       // If URL not seen before, add it to the set and push the site with normalized URL to the list
@@ -151,10 +138,13 @@ function getPriority(currentUrl, link, linkText, siteInfo) {
  * - Excludes reports older than the configured age limit (in days).
  * - Optionally filters to include only reports mentioning important rivers.
  *
- * @param {string[]} reports - Array of raw report texts.
+ * @param {{reports: *, failedDomains: *[]}} reports - Array of raw report texts.
+ * @param maxAge
+ * @param filterByRivers
+ * @param riverList
  * @returns {string[]} Array of reports that meet the filtering criteria.
  */
-function filterReports(reports) {
+function filterReports(reports, maxAge, filterByRivers, riverList) {
   const today = new Date();
 
   return reports.filter((report) => {
@@ -165,10 +155,10 @@ function filterReports(reports) {
     if (!reportDate) return false;
 
     // Exclude reports older than the allowed age limit
-    if (differenceInDays(today, reportDate) > ageLimit) return false;
+    if (differenceInDays(today, reportDate) > maxAge) return false;
 
     // If filtering by river is enabled, exclude reports that do not mention any important rivers
-    if (filterByRiver && !includesAny(report, importantRivers)) return false;
+    if (filterByRivers && !includesAny(report, riverList)) return false;
 
     // If the report passed all filters, include it
     return true;
@@ -199,9 +189,10 @@ function estimateTokenCount(text) {
  * the token limit.
  *
  * @param {string} text - The complete report text to be chunked.
+ * @param tokenLimit
  * @returns {string[]} An array of text chunks, each under the token limit.
  */
-function chunkReportText(text) {
+function chunkReportText(text, tokenLimit) {
   // Split the text on the REPORT_DIVIDER
   const reports = text.split(REPORT_DIVIDER);
   const chunks = []; // Array to store the final text chunks
@@ -239,20 +230,19 @@ function chunkReportText(text) {
   return chunks;
 }
 
-// Initialize the Google GenAI client with your API key
-const ai = new GoogleGenAI({ apiKey: aiKey });
-
 /**
  * Generates content using the Google GenAI model.
  *
+ * @param ai
+ * @param model
  * @param {string} prompt - The input prompt to generate content from.
  * @returns {Promise<string>} The generated text content, or an empty string on failure.
  */
-async function generateContent(prompt) {
+async function generateContent(ai, model, prompt) {
   try {
     // Send the request to the AI model with the provided prompt
     const response = await ai.models.generateContent({
-      model: aiModel,
+      model: model,
       contents: prompt,
     });
     // Return the trimmed text response or an empty string if undefined
