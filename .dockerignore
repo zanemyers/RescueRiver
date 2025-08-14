@@ -1,2 +1,16 @@
+# Node modules - always install fresh in container
 node_modules/
+
+# Media or user-generated files
 media/
+
+# Environment files (already passed via `env_file`)
+.env
+
+# Editor/IDE config
+.vscode/
+.idea/
+
+# Git
+.git/
+.gitignore

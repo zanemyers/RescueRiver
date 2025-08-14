@@ -1,0 +1,54 @@
+<main class="container py-3">
+    <div class="row d-flex align-items-stretch">
+
+        <!-- Instructions panel -->
+        <div class="col-lg-5 mb-4 mb-lg-0 d-flex">
+            <div class="p-4 bg-light border rounded flex-fill d-flex flex-column">
+
+                <!-- What the tool does -->
+                <h2 class="h4 mb-2">🛠️ What This Tool Does</h2>
+                <p class="mb-4">
+                    Use this form to search for nearby businesses using <strong>SerpAPI</strong> and Google Maps.
+                    Perfect for finding specialty shops like fly fishing stores near a location.
+                </p>
+
+                <!-- How to use the tool -->
+                <h3 class="h5 mb-2">📋 How to Use It</h3>
+                <div class="steps">
+                    <div>
+                        <span class="icon">🔐</span> Enter your <strong>SerpAPI key</strong> (get one at
+                        <a href="https://serpapi.com" target="_blank">serpapi.com</a>).
+                    </div>
+                    <div>
+                        <span class="icon">🔎</span> Choose a <strong>search term</strong> like "Fly Fishing Shops".
+                    </div>
+                    <div>
+                        <span class="icon">📍</span> Select a location or enter a <strong>latitude</strong> and <strong>longitude</strong> to center your search.
+                    </div>
+                    <div>
+                        <span class="icon">✅</span> Click <strong>Run Search</strong> to begin.
+                    </div>
+                </div>
+
+                <!-- About the default settings -->
+                <h3 class="h5 mb-2">ℹ️ About the Defaults</h3>
+                <p class="mb-2">
+                    The default search is for <strong>Fly Fishing Shops</strong> centered near <strong>Yellowstone National Park</strong>, retrieving the first <strong>100</strong> results. You can change these to search anywhere.
+                </p>
+
+                <!-- Privacy notice -->
+                <p class="text-muted small mb-0">
+                    🔒 <strong>Privacy Notice:</strong> Your API key and search inputs are never stored or logged. Everything runs securely and locally in memory.
+                </p>
+            </div>
+        </div>
+
+        <!-- Form panel -->
+        <div id="formContainer" class="col-lg-7 d-flex">
+            <%- include('partials/shop_form.ejs') %>
+        </div>
+    </div>
+</main>
+
+<!-- Map modal for selecting coordinates -->
+<%- include('partials/map_modal.ejs') %>

@@ -1,33 +1,55 @@
-### ⚙️ WebStorm Setup
+## ⚙️ WebStorm Setup
 
-#### 🏃 Running & 🐞 Debugging
+### 🐞 Debugging
 
-- Add a run/debug configuration for both the Shop & Report Scrapers
-- Select `+ (Add New Configuration)`
-- Choose `Node.js`
-- Choose a name (e.g., `Shop Scraper`)
-- Add the script to the File parameter (e.g., `ShopScraper/shopScraper.js`)
-- Click `Apply` and `OK`
-- Repeat for the `Report Scraper`
-- To run a configuration:
-  - click the `▷ (Run)` button to run normally
-  - click the `🐞 (Debug)` button to run in debug mode
+#### 1. Add a Debug Configuration
 
-#### 🧰 Recommended Extensions
+1. Open **Run/Debug Configurations** in WebStorm
+2. Click **+ (Add New Configuration)**
+3. Select **Attach to Node.js/Chrome**
+4. Set the **Name** to `localhost`
+5. Set the **Port** to `9229`
+6. Click **Apply** and **OK**
+
+#### 2. Start the Server
+
+- 🐳 **Docker**: `docker-compose up`
+- 🏠 **Local**: `just start`
+
+#### 3. Attach the Debugger
+
+- Click the `🐞 (Debug)` button to run in debug mode
+
+### Auto-Compile SCSS
+
+1. Go to **Settings → Tools → File Watchers**  
+
+2. Click the **+** icon and select **Sass/SCSS**.
+
+3. Configure the watcher:  
+   ![scss_screenshot.png](images/scss_screenshot.png)
+
+4. Save the watcher. Now, editing and saving `.scss` files will automatically compile them to `.css`.
+
+
+
+### 🧰 Recommended Extensions
 
 - GitHub by JetBrains
 - Just by linux_china
 - Light Sheet by Victoryil
   > WebStorm bundles some plugins like Docker automatically
 
-### ⚙️ Visual Studio Code Setup
+[//]: # "TODO: UPDATE VS Code Setup"
 
-#### 🐞 Debugging
+## ⚙️ Visual Studio Code Setup
+
+### 🐞 Debugging
 
 - On MacOS press `cmd + shift + p` to open the command palette
 - Search `Debug: Toggle Auto Attach` and set it to `Only With Flag`
 
-#### 🧰 Recommended Extensions
+### 🧰 Recommended Extensions
 
 - Container Tools by Microsoft
 - Docker by Microsoft

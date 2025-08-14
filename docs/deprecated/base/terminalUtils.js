@@ -55,9 +55,7 @@ class Spinner {
 
     this.timer = setInterval(() => {
       // Print the current frame with the spinner text
-      process.stdout.write(
-        `\r${this.frames[this.index++ % this.frames.length]} ${text}`
-      );
+      process.stdout.write(`\r${this.frames[this.index++ % this.frames.length]} ${text}`);
     }, this.intervalMs);
   }
 

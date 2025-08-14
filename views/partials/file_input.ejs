@@ -1,0 +1,36 @@
+<!-- File input label -->
+<label for="inputFile" class="form-label"><%= label %></label>
+
+<!-- Styled container for drag-and-drop or click-to-upload -->
+<div id="file-input-wrapper" class="file-input-wrapper border rounded bg-light py-3 flex-fill">
+    <img src="/images/upload.png" alt="Folder Icon" />
+    <p class="mb-2">Drag & Drop or Click to Select File</p>
+
+    <!-- Shows selected file name with a remove button (hidden by default via Bootstrap `d-none`) -->
+    <div id="selected-file-wrapper" class="mb-2 fw-bold g-2 d-none">
+        <button id="clear-file-button" class="btn btn-outline-danger" aria-label="Remove File">
+            &times; <!-- × symbol for "remove" -->
+        </button>
+        <span id="selectedFile" class="ms-2"></span>
+    </div>
+
+    <!-- Note about allowed file formats -->
+    <p class="text-muted small">Only .xls and .xlsx files are accepted.</p>
+</div>
+
+<!-- Hidden file input that only accepts Excel files and is required by default -->
+<input class="form-control d-none"
+       type="file"
+       id="inputFile"
+       name="inputFile"
+       accept=".xls,.xlsx"
+       required />
+
+
+<script src="/static/js/fileInput.js" type="module"></script>
+<script>
+    // Initialize file input behavior when the DOM is ready
+    document.addEventListener("DOMContentLoaded", () => {
+        initFileInput();
+    });
+</script>

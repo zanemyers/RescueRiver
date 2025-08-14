@@ -1,25 +1,25 @@
 ## 🛒 Shop Scraper
 
-Pulls business data using SerpAPI and associated websites, compiling the results into a structured Excel file.
+Scrapes business data from Google Maps using SerpAPI and individual shop websites, compiling the results into a structured Excel file.
 
 ### 🔍 Features
 
-- Fetches local business listings using SerpAPI's Google Maps engine
-- Supports caching of fetched shop data to reduce redundant API usage
-- Launches a Playwright browser to extract additional data from each shop's website:
-  - Email Address
-  - Online Store
-  - Fishing Report
-  - Social Media
-- Writes all results to an Excel (.xlsx) file
-- Provides progress indicators in the terminal
-- Supports customizations via `.env` settings
-- Handles request errors gracefully with fallback data
+- Fetches local business listings via SerpAPI's Google Maps engine.
+- Supports using cached Excel files of previously fetched shop data to reduce redundant API calls.
+- Launches a Playwright browser to extract additional details from each shop's website:
+  - Email address
+  - Online store availability
+  - Fishing report presence
+  - Social media profiles
+- Writes all collected data to an Excel (.xlsx) file for easy access and analysis.
+- Displays progress indicators while scraping to monitor completion.
+- Supports customizations through interactive form input.
+- Handles errors and blocked sites gracefully by providing standardized fallback data.
 
 ### 📅 Future Plans
 
-- Add option to choose between SerpAPI and Google’s new Places API (`places:searchText`)
-  - The new Places API is currently limited to 20 results per query (see `google-places-api` branch), so it won't be useful until the update the limit or add pagination.
+- Add support for selecting between SerpAPI and Google's new Places API (`places:searchText`).
+  - Note: The new Places API currently limits results to 20 per query (see `google-places-api` branch). Pagination or limit increases will be required for full-scale scraping.
 
 ### 🐞 Known Issues
 
@@ -28,18 +28,24 @@ Pulls business data using SerpAPI and associated websites, compiling the results
 - Requires headless mode in Docker
 - Cannot be debugged in Docker
 
-## 📈 Report Scraper (In-Progress)
+## 📈 Report Scraper
 
-Parses and summarizes fishing reports from shop websites. Takes an [Excel config file](../assets/example_files/report_scraper_ex.xlsx) that defines how to extract report content (selectors, keywords, etc.) for each site — _see example file_.
+Parses, summarizes, and consolidates reports from various websites into structured summaries.
 
-### 🧠 Intended Features
+### 🔍 Features
 
-- Identify and append missing report URLs from site data to the report file
-- Detect and summarize river conditions and activity from fishing reports
-- Filter by river name
-- Track report freshness based on publication dates
+- Uses an **[Excel starter/config file](../static/example_files/report_starter_file_ex.xlsx)** to define site-specific extraction rules:
+  - CSS selectors, keywords, and other metadata for each shop website.
+- Filters reports based on **maximum age** (in days) to prioritize recent content.
+- Supports **river-specific filtering**, allowing users to focus on particular rivers:
+- Summarizes report content using **Gemini AI models**:
+  - Model selection is customizable (e.g., `gemini-2.5-flash`).
+  - Token limits can be configured per request.
+  - Prompts for summarization and merging are customizable via form input.
+- Configurable **crawl depth** to control how far the scraper follows links from the initial page.
+- Provides progress feedback while parsing and summarizing reports.
 
 ### 🐞 Known Issues
 
 - Must run headless in Docker
-- Still under development
+- Summarization can be flakey depending on prompt or ai model

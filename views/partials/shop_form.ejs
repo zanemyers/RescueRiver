@@ -1,0 +1,126 @@
+<!-- Shop search form -->
+<form id="form" enctype="multipart/form-data" class="p-4 border rounded bg-white shadow-sm flex-fill d-flex flex-column">
+
+    <!-- Error messages will be injected here dynamically -->
+    <div id="formError"></div>
+
+    <div class="form-body">
+        <!-- Tab navigation: Manual Input / File Import -->
+        <ul class="nav nav-tabs mb-3" id="inputTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="manual-tab" data-bs-toggle="tab" data-bs-target="#manualInputs" type="button" role="tab" aria-controls="manualInputs" aria-selected="true">
+                    Manual Input
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="file-tab" data-bs-toggle="tab" data-bs-target="#fileInput" type="button" role="tab" aria-controls="fileInput" aria-selected="false">
+                    File Import
+                </button>
+            </li>
+        </ul>
+
+        <!-- Tab content -->
+        <div class="tab-content">
+            <!-- Manual Input tab -->
+            <div class="tab-pane show active" id="manualInputs" role="tabpanel" aria-labelledby="manual-tab">
+                <!-- API Key input -->
+                <div class="form-input">
+                    <label for="apiKey" class="form-label">SerpAPI Key</label>
+                    <input
+                            type="password"
+                            class="form-control"
+                            id="apiKey"
+                            name="apiKey"
+                            placeholder="API key"
+                            title="Your private SerpAPI key"
+                    />
+                </div>
+
+                <!-- Search term input -->
+                <div class="form-input">
+                    <label for="query" class="form-label">Search Term</label>
+                    <input
+                            type="text"
+                            class="form-control"
+                            id="query"
+                            name="query"
+                            value="Fly Fishing Shops"
+                            placeholder="e.g. Fly Fishing Shops, Tackle Stores"
+                            title="Specify the business or shop type you want to search for"
+                    />
+                </div>
+
+                <!-- Location input (lat/lon) with map picker -->
+                <div class="form-input">
+                    <label class="form-label">Location</label>
+                    <div class="input-group">
+                        <input
+                                type="number"
+                                class="form-control"
+                                id="latitude"
+                                title="Latitude: decimal degrees, between -90 and 90"
+                                name="latitude"
+                                step="0.000001"
+                                min="-90"
+                                max="90"
+                                value="44.427963"
+                                placeholder="Latitude (e.g. 44.427963)"
+                        />
+                        <input
+                                type="number"
+                                class="form-control"
+                                id="longitude"
+                                title="Longitude: decimal degrees, between -180 and 180"
+                                name="longitude"
+                                step="0.000001"
+                                min="-180"
+                                max="180"
+                                value="-110.588455"
+                                placeholder="Longitude (e.g. -110.588455)"
+                        />
+                        <!-- Map location picker button -->
+                        <button
+                                type="button"
+                                class="input-group-text location-picker"
+                                title="Open map to select location"
+                                data-bs-placement="top"
+                                data-bs-toggle="modal"
+                                data-bs-target="#mapModal"
+                        >
+                            <img src="/images/location_pin.png" alt="Location Pin" style="height: 1em;" />
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Max results input -->
+                <div class="form-input">
+                    <label for="maxResults" class="form-label">Max Results</label>
+                    <input
+                            type="number"
+                            class="form-control"
+                            id="maxResults"
+                            title="Maximum number of results (in multiples of 20, min: 20, max: 120)"
+                            name="maxResults"
+                            step="20"
+                            min="20"
+                            max="120"
+                            value="100"
+                            placeholder="e.g. 100"
+                    />
+                </div>
+            </div>
+
+            <!-- File Import tab -->
+            <div class="tab-pane" id="fileInput" role="tabpanel" aria-labelledby="file-tab">
+                <!-- File upload input (uses shared EJS partial) -->
+                <div class="form-input">
+                    <%- include('./file_input.ejs', { label: 'Import Excel File' }) %>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary mt-auto mx-1">Run Search</button>
+</form>
+
+<script src="/static/js/shopFormApp.js" type="module"></script>

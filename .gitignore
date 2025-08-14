@@ -1,3 +1,8 @@
+# Node modules
 node_modules/
+
+# Media or user-generated files
 media/
+
+# Environment files (already passed via `env_file`)
 .env

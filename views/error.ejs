@@ -1,0 +1,18 @@
+<main class="container text-center py-0">
+    <!-- Large status code display (e.g., 404, 500) -->
+    <h1 class="display-2 mb-3 text-secondary"><b><%= status_code %></b></h1>
+
+    <!-- Optional heading with default" -->
+    <h1 class="display-6"><%= heading || "Gone Fishing..." %></h1>
+
+    <!-- Optional descriptive message with default -->
+    <p class="lead"><%= message || "Looks like the page you were trying to find has drifted downstream." %></p>
+
+    <!-- Image/gif illustration -->
+    <div class="my-4 text-center" style="max-width: 300px; margin: 0 auto;">
+        <img src="/images/calvin-fishing.gif" alt="Fishing Gif" class="img-fluid rounded" />
+    </div>
+
+    <!-- Call-to-action button back to home page -->
+    <a href="/" class="btn btn-primary btn-lg px-4">Cast a Line Back Home</a>
+</main>
